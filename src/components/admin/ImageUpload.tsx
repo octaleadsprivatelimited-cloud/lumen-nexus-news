@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Upload, X, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, X, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,7 +11,120 @@ interface ImageUploadProps {
   folder?: string;
   className?: string;
   aspectRatio?: 'square' | 'video' | 'wide';
+  maxSizeKB?: number;
 }
+
+// Convert image to WebP and compress to target size
+const compressToWebP = async (
+  file: File,
+  maxSizeKB: number = 200
+): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      // Start with original dimensions
+      let width = img.width;
+      let height = img.height;
+      
+      // Max dimension to prevent huge images
+      const MAX_DIMENSION = 2048;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Binary search for optimal quality
+      const targetBytes = maxSizeKB * 1024;
+      let minQuality = 0.1;
+      let maxQuality = 1.0;
+      let bestBlob: Blob | null = null;
+      let iterations = 0;
+      const maxIterations = 10;
+
+      const tryCompress = (quality: number): Promise<Blob> => {
+        return new Promise((res) => {
+          canvas.toBlob(
+            (blob) => res(blob!),
+            'image/webp',
+            quality
+          );
+        });
+      };
+
+      const findOptimalQuality = async () => {
+        // First try highest quality
+        let blob = await tryCompress(maxQuality);
+        
+        if (blob.size <= targetBytes) {
+          resolve(blob);
+          return;
+        }
+
+        // Binary search for optimal quality
+        while (iterations < maxIterations && maxQuality - minQuality > 0.05) {
+          iterations++;
+          const midQuality = (minQuality + maxQuality) / 2;
+          blob = await tryCompress(midQuality);
+          
+          if (blob.size <= targetBytes) {
+            bestBlob = blob;
+            minQuality = midQuality;
+          } else {
+            maxQuality = midQuality;
+          }
+        }
+
+        // If still too large, reduce dimensions
+        if (!bestBlob || bestBlob.size > targetBytes) {
+          let scale = 0.9;
+          while (scale > 0.3) {
+            const newWidth = Math.round(width * scale);
+            const newHeight = Math.round(height * scale);
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+            
+            blob = await tryCompress(0.85);
+            if (blob.size <= targetBytes) {
+              resolve(blob);
+              return;
+            }
+            scale -= 0.1;
+          }
+          
+          // Final attempt with minimum settings
+          canvas.width = Math.round(width * 0.3);
+          canvas.height = Math.round(height * 0.3);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          blob = await tryCompress(0.7);
+          resolve(blob);
+          return;
+        }
+
+        resolve(bestBlob);
+      };
+
+      findOptimalQuality().catch(reject);
+    };
+
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 export const ImageUpload = ({
   value,
@@ -19,18 +132,20 @@ export const ImageUpload = ({
   folder = 'uploads',
   className,
   aspectRatio = 'video',
+  maxSizeKB = 200,
 }: ImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [compressionProgress, setCompressionProgress] = useState<string | null>(null);
 
   const validateFile = (file: File): string | null => {
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      return 'Invalid file type. Accepted: PNG, JPG, JPEG, WEBP';
+      return 'Invalid file type. Accepted: PNG, JPG, JPEG, WEBP, GIF';
     }
     
-    // Max 20MB upload
+    // Max 20MB upload (before compression)
     if (file.size > 20 * 1024 * 1024) {
       return 'File too large. Maximum size is 20MB';
     }
@@ -40,6 +155,7 @@ export const ImageUpload = ({
 
   const uploadImage = async (file: File) => {
     setError(null);
+    setCompressionProgress(null);
     
     const validationError = validateFile(file);
     if (validationError) {
@@ -51,10 +167,28 @@ export const ImageUpload = ({
     setIsUploading(true);
 
     try {
+      // Compress to WebP client-side
+      setCompressionProgress('Converting to WebP...');
+      const compressedBlob = await compressToWebP(file, maxSizeKB);
+      
+      const originalSizeKB = Math.round(file.size / 1024);
+      const compressedSizeKB = Math.round(compressedBlob.size / 1024);
+      
+      setCompressionProgress(`Compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB`);
+      
+      // Create a new File from the blob
+      const webpFile = new File(
+        [compressedBlob], 
+        file.name.replace(/\.[^/.]+$/, '') + '.webp',
+        { type: 'image/webp' }
+      );
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', webpFile);
       formData.append('folder', folder);
 
+      setCompressionProgress('Uploading...');
+      
       const { data, error: invokeError } = await supabase.functions.invoke('process-image', {
         body: formData,
       });
@@ -68,13 +202,14 @@ export const ImageUpload = ({
       }
 
       onChange(data.url);
-      toast.success('Image uploaded successfully');
+      toast.success(`Image uploaded (${compressedSizeKB}KB WebP)`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload image';
       setError(message);
       toast.error(message);
     } finally {
       setIsUploading(false);
+      setCompressionProgress(null);
     }
   };
 
@@ -96,7 +231,7 @@ export const ImageUpload = ({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       uploadImage(e.dataTransfer.files[0]);
     }
-  }, [folder]);
+  }, [folder, maxSizeKB]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -153,7 +288,7 @@ export const ImageUpload = ({
     >
       <input
         type="file"
-        accept="image/png,image/jpeg,image/jpg,image/webp"
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
         onChange={handleChange}
         disabled={isUploading}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
@@ -163,7 +298,9 @@ export const ImageUpload = ({
         {isUploading ? (
           <>
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Uploading...</p>
+            <p className="text-sm text-muted-foreground">
+              {compressionProgress || 'Processing...'}
+            </p>
           </>
         ) : (
           <>
@@ -177,7 +314,7 @@ export const ImageUpload = ({
                 {dragActive ? 'Drop image here' : 'Click or drag to upload'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG, WEBP • Max 300KB after compression
+                Auto-converts to WebP • Max {maxSizeKB}KB
               </p>
               {error && (
                 <p className="text-xs text-destructive mt-2">{error}</p>

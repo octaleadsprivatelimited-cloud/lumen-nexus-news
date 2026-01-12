@@ -95,25 +95,11 @@ Deno.serve(async (req) => {
     // Generate SEO-friendly filename
     const seoFilename = generateSeoFilename(file.name, folder)
     
-    // For now, we'll upload the image directly
-    // In production, you'd use a service like Sharp via a different approach
-    // Since Deno Edge Functions have limitations on image processing libraries
-    
-    // Check file size - if already under 300KB, upload directly
+    // Client-side compression is expected - images should already be WebP and compressed
     const fileSizeKB = uint8Array.length / 1024
     
-    if (fileSizeKB > 300 && file.type !== 'image/webp') {
-      // For larger files that aren't WebP, we need to handle compression
-      // Since we can't use Sharp in Deno, we'll inform the client
-      return new Response(
-        JSON.stringify({ 
-          error: 'Image too large. Please compress your image to under 300KB or use WebP format.',
-          currentSize: Math.round(fileSizeKB),
-          maxSize: 300
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Log the upload details
+    console.log(`Processing upload: ${file.name}, size: ${Math.round(fileSizeKB)}KB, type: ${file.type}`)
 
     // Upload the image
     const { data: uploadData, error: uploadError } = await supabase.storage
