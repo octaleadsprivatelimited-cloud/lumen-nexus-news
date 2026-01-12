@@ -12,8 +12,16 @@ export function HeroSection({ featuredArticles }: HeroSectionProps) {
   if (!mainArticle) return null;
 
   return (
-    <section className="container py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <section className="container py-4 md:py-6">
+      {/* Mobile: 2x2 grid */}
+      <div className="grid grid-cols-2 gap-3 md:hidden">
+        {featuredArticles.slice(0, 4).map((article) => (
+          <ArticleCard key={article.id} article={article} />
+        ))}
+      </div>
+
+      {/* Desktop: Original layout */}
+      <div className="hidden md:grid md:grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main Featured Article */}
         <div className="lg:col-span-2">
           <ArticleCard article={mainArticle} variant="featured" className="h-full" />
