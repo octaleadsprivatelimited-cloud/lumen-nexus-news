@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { CategoryBadge } from "@/components/articles/CategoryBadge";
 import { ArticleCard } from "@/components/articles/ArticleCard";
+import { SocialShare } from "@/components/articles/SocialShare";
 import { Button } from "@/components/ui/button";
 import AdSlot from "@/components/ads/AdSlot";
 import {
@@ -9,10 +10,6 @@ import {
   Calendar,
   Eye,
   Share2,
-  Twitter,
-  Facebook,
-  Linkedin,
-  Link as LinkIcon,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -45,10 +42,6 @@ const ArticlePage = () => {
 
   const shareUrl = window.location.href;
   const shareTitle = article.title;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-  };
 
   return (
     <Layout>
@@ -133,60 +126,11 @@ const ArticlePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Share Buttons - Sticky on Desktop */}
             <aside className="lg:col-span-1">
-              <div className="lg:sticky lg:top-24 flex lg:flex-col gap-2">
+              <div className="lg:sticky lg:top-24">
                 <span className="hidden lg:flex items-center justify-center text-xs text-muted-foreground mb-2">
                   <Share2 className="h-4 w-4" />
                 </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="share-btn"
-                  asChild
-                >
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="share-btn"
-                  asChild
-                >
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="share-btn"
-                  asChild
-                >
-                  <a
-                    href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="share-btn"
-                  onClick={handleCopyLink}
-                >
-                  <LinkIcon className="h-4 w-4" />
-                </Button>
+                <SocialShare url={shareUrl} title={shareTitle} vertical />
               </div>
             </aside>
 
