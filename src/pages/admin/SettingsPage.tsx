@@ -8,7 +8,9 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Globe, Mail, Bell, Shield, Palette } from 'lucide-react';
+import { Save, Globe, Mail, Bell, Shield, Palette, Clock, Copy, ExternalLink, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useLastPing, useManualPing } from '@/hooks/usePingStatus';
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -50,6 +52,173 @@ const SettingsPage = () => {
     toast({ title: `${section} settings saved successfully` });
   };
 
+  const KEEP_ALIVE_URL = 'https://ycsvgcvrknipvvrbjond.supabase.co/functions/v1/keep-alive';
+
+  const KeepAliveSettings = () => {
+    const { data: lastPing } = useLastPing();
+    const { mutate: triggerPing, isPending } = useManualPing();
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(KEEP_ALIVE_URL);
+      setCopied(true);
+      toast({ title: 'URL copied to clipboard' });
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Backend Keep-Alive Configuration
+            </CardTitle>
+            <CardDescription>
+              Keep your backend active by setting up automatic pings every 12 hours
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Status */}
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Current Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    Last ping: {lastPing?.pinged_at 
+                      ? new Date(lastPing.pinged_at).toLocaleString() 
+                      : 'Never'}
+                  </p>
+                </div>
+                <Badge variant={lastPing?.status === 'success' ? 'default' : 'secondary'}>
+                  {lastPing?.status === 'success' ? 'Healthy' : 'No Data'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Endpoint URL */}
+            <div className="space-y-2">
+              <Label>Keep-Alive Endpoint URL</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={KEEP_ALIVE_URL} 
+                  readOnly 
+                  className="font-mono text-sm"
+                />
+                <Button variant="outline" size="icon" onClick={handleCopy}>
+                  {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use this URL in your external cron service
+              </p>
+            </div>
+
+            {/* Test Button */}
+            <Button 
+              onClick={() => triggerPing()} 
+              disabled={isPending}
+              variant="outline"
+            >
+              {isPending ? 'Pinging...' : 'Test Ping Now'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Setup Instructions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Setup Instructions (cron-job.org)</CardTitle>
+            <CardDescription>
+              Follow these steps to set up automatic 12-hour pings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ol className="list-decimal list-inside space-y-3 text-sm">
+              <li className="space-y-1">
+                <span className="font-medium">Create a free account at cron-job.org</span>
+                <div className="ml-6">
+                  <a 
+                    href="https://cron-job.org" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Go to cron-job.org <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </li>
+              
+              <li className="space-y-1">
+                <span className="font-medium">Click "Create cronjob" after logging in</span>
+              </li>
+              
+              <li className="space-y-2">
+                <span className="font-medium">Configure the cron job with these settings:</span>
+                <div className="ml-6 p-3 bg-muted rounded-lg space-y-2 font-mono text-xs">
+                  <div><span className="text-muted-foreground">Title:</span> 9knowledge Keep-Alive</div>
+                  <div><span className="text-muted-foreground">URL:</span> {KEEP_ALIVE_URL}</div>
+                  <div><span className="text-muted-foreground">Schedule:</span> Every 12 hours</div>
+                  <div><span className="text-muted-foreground">Method:</span> POST</div>
+                </div>
+              </li>
+              
+              <li className="space-y-1">
+                <span className="font-medium">Set the schedule to "Every 12 hours"</span>
+                <div className="ml-6 text-muted-foreground">
+                  Or use cron expression: <code className="bg-muted px-1 rounded">0 */12 * * *</code>
+                </div>
+              </li>
+              
+              <li className="space-y-1">
+                <span className="font-medium">Save and enable the cron job</span>
+              </li>
+            </ol>
+
+            <div className="p-4 border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                ⚠️ Important
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                Free-tier databases may sleep after 7 days of inactivity. 
+                This keep-alive ping ensures your database stays active.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Alternative Services */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Alternative Cron Services</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <a 
+                href="https://www.easycron.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>EasyCron</span>
+              </a>
+              <a 
+                href="https://uptimerobot.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>UptimeRobot</span>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -59,7 +228,7 @@ const SettingsPage = () => {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="general" className="gap-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">General</span>
@@ -79,6 +248,10 @@ const SettingsPage = () => {
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Notifications</span>
+            </TabsTrigger>
+            <TabsTrigger value="keepalive" className="gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Keep-Alive</span>
             </TabsTrigger>
           </TabsList>
 
@@ -414,6 +587,10 @@ const SettingsPage = () => {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="keepalive">
+            <KeepAliveSettings />
           </TabsContent>
         </Tabs>
       </div>
