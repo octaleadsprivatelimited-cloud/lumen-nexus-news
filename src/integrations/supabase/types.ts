@@ -256,6 +256,30 @@ export type Database = {
         }
         Relationships: []
       }
+      supabase_pings: {
+        Row: {
+          error_message: string | null
+          id: string
+          pinged_at: string
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          pinged_at?: string
+          response_time_ms?: number | null
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          pinged_at?: string
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           created_at: string
