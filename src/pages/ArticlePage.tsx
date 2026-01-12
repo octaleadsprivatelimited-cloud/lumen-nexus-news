@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { usePublicArticleBySlug, useLatestArticles } from "@/hooks/usePublicArticles";
+import { useReadingAnalytics } from "@/hooks/useReadingAnalytics";
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return '';
@@ -31,6 +32,9 @@ const ArticlePage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: article, isLoading } = usePublicArticleBySlug(slug || '');
   const { data: latestArticles } = useLatestArticles(4);
+
+  // Track reading analytics
+  useReadingAnalytics(article?.id);
 
   // Get related articles (same category, excluding current)
   const relatedArticles = latestArticles?.filter(
