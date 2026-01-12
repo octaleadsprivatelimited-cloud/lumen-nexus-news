@@ -37,8 +37,7 @@ export const useArticles = (status?: ArticleStatus) => {
         .from('articles')
         .select(`
           *,
-          category:categories(*),
-          author:profiles(*)
+          category:categories(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -61,8 +60,7 @@ export const useArticle = (id: string) => {
         .from('articles')
         .select(`
           *,
-          category:categories(*),
-          author:profiles(*)
+          category:categories(*)
         `)
         .eq('id', id)
         .maybeSingle();
@@ -82,8 +80,7 @@ export const useArticleBySlug = (slug: string) => {
         .from('articles')
         .select(`
           *,
-          category:categories(*),
-          author:profiles(*)
+          category:categories(*)
         `)
         .eq('slug', slug)
         .maybeSingle();
