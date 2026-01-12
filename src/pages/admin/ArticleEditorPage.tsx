@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { RichTextEditor } from '@/components/admin/RichTextEditor';
 
 const generateSlug = (title: string): string => {
   return title
@@ -219,13 +220,10 @@ const ArticleEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="Write your article content here..."
-                    rows={15}
-                    className="font-mono"
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
+                    placeholder="Start writing your article..."
                   />
                 </div>
               </CardContent>
