@@ -20,6 +20,7 @@ import ArticleEditorPage from "./pages/admin/ArticleEditorPage";
 import CategoriesPage from "./pages/admin/CategoriesPage";
 import TagsPage from "./pages/admin/TagsPage";
 import UsersPage from "./pages/admin/UsersPage";
+import AdsPage from "./pages/admin/AdsPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/admin/articles/:id" element={<ProtectedRoute><ArticleEditorPage /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
             <Route path="/admin/tags" element={<ProtectedRoute><TagsPage /></ProtectedRoute>} />
+            <Route path="/admin/ads" element={<ProtectedRoute requireSuperAdmin><AdsPage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requireSuperAdmin><UsersPage /></ProtectedRoute>} />
             
             {/* Catch-all */}
