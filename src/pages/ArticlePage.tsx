@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { CategoryBadge } from "@/components/articles/CategoryBadge";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { SocialShare } from "@/components/articles/SocialShare";
+import { ReadingProgress } from "@/components/articles/ReadingProgress";
 import { Button } from "@/components/ui/button";
 import AdSlot from "@/components/ads/AdSlot";
 import {
@@ -45,6 +46,7 @@ const ArticlePage = () => {
 
   return (
     <Layout>
+      <ReadingProgress />
       <article>
         {/* Breadcrumb */}
         <nav className="container py-4 border-b border-border">
