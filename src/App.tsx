@@ -22,7 +22,6 @@ import TagsPage from "./pages/admin/TagsPage";
 import UsersPage from "./pages/admin/UsersPage";
 import AdsPage from "./pages/admin/AdsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
-import SubscribersPage from "./pages/admin/SubscribersPage";
 import MediaPage from "./pages/admin/MediaPage";
 
 const queryClient = new QueryClient();
@@ -52,7 +51,6 @@ const App = () => (
             <Route path="/admin/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
             <Route path="/admin/tags" element={<ProtectedRoute><TagsPage /></ProtectedRoute>} />
             <Route path="/admin/media" element={<ProtectedRoute><MediaPage /></ProtectedRoute>} />
-            <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
             <Route path="/admin/ads" element={<ProtectedRoute requireSuperAdmin><AdsPage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requireSuperAdmin><UsersPage /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute requireSuperAdmin><SettingsPage /></ProtectedRoute>} />
