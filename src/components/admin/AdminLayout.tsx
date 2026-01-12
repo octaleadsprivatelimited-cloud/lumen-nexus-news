@@ -27,9 +27,6 @@ const navItems = [
   { href: '/admin/categories', icon: FolderOpen, label: 'Categories' },
   { href: '/admin/tags', icon: Tags, label: 'Tags' },
   { href: '/admin/media', icon: FolderOpen, label: 'Media' },
-  { href: '/admin/subscribers', icon: Users, label: 'Subscribers' },
-  { href: '/admin/ads', icon: Megaphone, label: 'Ads', superAdminOnly: true },
-  { href: '/admin/users', icon: Users, label: 'Users', superAdminOnly: true },
   { href: '/admin/settings', icon: Settings, label: 'Settings', superAdminOnly: true },
 ];
 
