@@ -259,6 +259,44 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_analytics: {
+        Row: {
+          article_id: string
+          completed_reading: boolean | null
+          created_at: string
+          id: string
+          scroll_depth: number
+          session_id: string
+          time_on_page: number
+        }
+        Insert: {
+          article_id: string
+          completed_reading?: boolean | null
+          created_at?: string
+          id?: string
+          scroll_depth?: number
+          session_id: string
+          time_on_page?: number
+        }
+        Update: {
+          article_id?: string
+          completed_reading?: boolean | null
+          created_at?: string
+          id?: string
+          scroll_depth?: number
+          session_id?: string
+          time_on_page?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_analytics_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supabase_pings: {
         Row: {
           error_message: string | null
@@ -354,6 +392,15 @@ export type Database = {
     }
     Functions: {
       calculate_reading_time: { Args: { content: string }; Returns: number }
+      get_article_reading_stats: {
+        Args: { article_uuid: string }
+        Returns: {
+          avg_scroll_depth: number
+          avg_time_on_page: number
+          completion_rate: number
+          total_reads: number
+        }[]
+      }
       get_profile_with_email: {
         Args: { profile_id: string }
         Returns: {

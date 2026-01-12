@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,13 @@ import { Switch } from '@/components/ui/switch';
 import { useArticle, useCreateArticle, useUpdateArticle } from '@/hooks/useArticles';
 import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAutosave } from '@/hooks/useAutosave';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Loader2, Clock, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { Badge } from '@/components/ui/badge';
 
 const generateSlug = (title: string): string => {
   return title
@@ -53,6 +55,7 @@ const ArticleEditorPage = () => {
     video_url: '',
     category_id: '',
     status: 'draft' as 'draft' | 'published' | 'scheduled' | 'archived',
+    scheduled_at: '',
     is_featured: false,
     is_trending: false,
     meta_title: '',
@@ -62,6 +65,27 @@ const ArticleEditorPage = () => {
     canonical_url: '',
     no_index: false,
   });
+
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Autosave hook
+  const storageKey = isNew ? 'article_draft_new' : `article_draft_${id}`;
+  const { checkForDraft, clearDraft } = useAutosave({
+    data: formData,
+    storageKey,
+    debounceMs: 3000,
+    onRestore: (data) => {
+      setFormData(data as typeof formData);
+      toast.success('Draft restored');
+    },
+  });
+
+  // Check for saved draft on mount (only for new articles)
+  useEffect(() => {
+    if (isNew) {
+      checkForDraft();
+    }
+  }, [isNew, checkForDraft]);
 
   useEffect(() => {
     if (existingArticle) {
@@ -75,6 +99,9 @@ const ArticleEditorPage = () => {
         video_url: (existingArticle as any).video_url || '',
         category_id: existingArticle.category_id || '',
         status: existingArticle.status || 'draft',
+        scheduled_at: (existingArticle as any).scheduled_at 
+          ? new Date((existingArticle as any).scheduled_at).toISOString().slice(0, 16) 
+          : '',
         is_featured: existingArticle.is_featured || false,
         is_trending: existingArticle.is_trending || false,
         meta_title: existingArticle.meta_title || '',
@@ -95,9 +122,15 @@ const ArticleEditorPage = () => {
     }));
   };
 
-  const handleSubmit = async (status?: 'draft' | 'published') => {
+  const handleSubmit = async (status?: 'draft' | 'published' | 'scheduled') => {
     if (!formData.title || !formData.slug) {
       toast.error('Please fill in required fields');
+      return;
+    }
+
+    // Validate scheduled_at for scheduled articles
+    if (status === 'scheduled' && !formData.scheduled_at) {
+      toast.error('Please set a publish date for scheduled articles');
       return;
     }
 
@@ -111,6 +144,9 @@ const ArticleEditorPage = () => {
       video_url: formData.video_url || null,
       category_id: formData.category_id || null,
       status: status || formData.status,
+      scheduled_at: status === 'scheduled' && formData.scheduled_at 
+        ? new Date(formData.scheduled_at).toISOString() 
+        : null,
       is_featured: formData.is_featured,
       is_trending: formData.is_trending,
       meta_title: formData.meta_title || null,
@@ -127,10 +163,13 @@ const ArticleEditorPage = () => {
       if (isNew) {
         await createArticle.mutateAsync(articleData);
         toast.success('Article created successfully');
+        clearDraft();
       } else {
         await updateArticle.mutateAsync({ id: id!, ...articleData });
         toast.success('Article updated successfully');
+        clearDraft();
       }
+      setLastSaved(new Date());
       navigate('/admin/articles');
     } catch (error: any) {
       toast.error(error.message || 'Error saving article');
@@ -164,10 +203,20 @@ const ArticleEditorPage = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {lastSaved && (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                <Check className="h-3 w-3 mr-1" />
+                Saved
+              </Badge>
+            )}
             <Button variant="outline" onClick={() => handleSubmit('draft')}>
               <Save className="h-4 w-4 mr-2" />
               Save Draft
+            </Button>
+            <Button variant="secondary" onClick={() => handleSubmit('scheduled')}>
+              <Clock className="h-4 w-4 mr-2" />
+              Schedule
             </Button>
             <Button onClick={() => handleSubmit('published')}>
               <Eye className="h-4 w-4 mr-2" />
@@ -413,6 +462,26 @@ const ArticleEditorPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Scheduled Publishing DateTime */}
+                {formData.status === 'scheduled' && (
+                  <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                    <Label htmlFor="scheduled_at" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Publish Date & Time
+                    </Label>
+                    <Input
+                      id="scheduled_at"
+                      type="datetime-local"
+                      value={formData.scheduled_at}
+                      onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Article will be automatically published at this time.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center space-x-2">
                   <Switch
