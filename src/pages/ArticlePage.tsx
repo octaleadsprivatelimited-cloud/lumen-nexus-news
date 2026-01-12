@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { CategoryBadge } from "@/components/articles/CategoryBadge";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { Button } from "@/components/ui/button";
+import AdSlot from "@/components/ads/AdSlot";
 import {
   Clock,
   Calendar,
@@ -198,6 +199,10 @@ const ArticlePage = () => {
                 <p className="text-lg leading-relaxed mt-6">
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
+                
+                {/* In-Article Ad */}
+                <AdSlot position="in-article" className="not-prose" />
+                
                 <h2 className="text-2xl font-display font-bold mt-8 mb-4">Key Takeaways</h2>
                 <ul className="space-y-2">
                   <li>Important insight number one about this topic</li>

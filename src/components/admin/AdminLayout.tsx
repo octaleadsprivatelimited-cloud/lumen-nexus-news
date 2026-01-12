@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Megaphone,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/admin/articles', icon: FileText, label: 'Articles' },
   { href: '/admin/categories', icon: FolderOpen, label: 'Categories' },
   { href: '/admin/tags', icon: Tags, label: 'Tags' },
+  { href: '/admin/ads', icon: Megaphone, label: 'Ads', superAdminOnly: true },
   { href: '/admin/users', icon: Users, label: 'Users', superAdminOnly: true },
   { href: '/admin/settings', icon: Settings, label: 'Settings', superAdminOnly: true },
 ];
