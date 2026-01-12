@@ -1,22 +1,28 @@
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { FileText, Eye, FolderOpen, Users, TrendingUp, Clock } from 'lucide-react';
+import { FileText, Eye, FolderOpen, Users, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, BarChart3, PieChart } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
 
 const StatCard = ({ 
   title, 
   value, 
   icon: Icon, 
-  description 
+  description,
+  trend,
+  trendValue,
 }: { 
   title: string; 
   value: string | number; 
   icon: any; 
   description?: string;
+  trend?: 'up' | 'down';
+  trendValue?: string;
 }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -27,12 +33,39 @@ const StatCard = ({
     </CardHeader>
     <CardContent>
       <div className="text-2xl font-bold">{value}</div>
-      {description && (
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
-      )}
+      <div className="flex items-center gap-2 mt-1">
+        {trend && (
+          <span className={`flex items-center text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+            {trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {trendValue}
+          </span>
+        )}
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
     </CardContent>
   </Card>
 );
+
+// Mock chart data
+const viewsData = [
+  { name: 'Mon', views: 2400 },
+  { name: 'Tue', views: 1398 },
+  { name: 'Wed', views: 9800 },
+  { name: 'Thu', views: 3908 },
+  { name: 'Fri', views: 4800 },
+  { name: 'Sat', views: 3800 },
+  { name: 'Sun', views: 4300 },
+];
+
+const categoryData = [
+  { name: 'Technology', value: 35, color: '#3b82f6' },
+  { name: 'Health', value: 25, color: '#22c55e' },
+  { name: 'Business', value: 20, color: '#f59e0b' },
+  { name: 'Lifestyle', value: 15, color: '#8b5cf6' },
+  { name: 'Other', value: 5, color: '#6b7280' },
+];
 
 const AdminDashboard = () => {
   const { data: analytics, isLoading } = useAnalytics();
@@ -65,11 +98,18 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome to your admin dashboard
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening with your blog.
+            </p>
+          </div>
+          <Link to="/admin/articles/new">
+            <Badge className="cursor-pointer hover:bg-primary/90">
+              + New Article
+            </Badge>
+          </Link>
         </div>
 
         {/* Stats Grid */}
@@ -79,11 +119,15 @@ const AdminDashboard = () => {
             value={analytics?.totalArticles || 0}
             icon={FileText}
             description={`${analytics?.publishedArticles || 0} published`}
+            trend="up"
+            trendValue="+12%"
           />
           <StatCard
             title="Total Views"
             value={analytics?.totalViews?.toLocaleString() || 0}
             icon={Eye}
+            trend="up"
+            trendValue="+8.2%"
           />
           <StatCard
             title="Categories"
@@ -94,10 +138,97 @@ const AdminDashboard = () => {
             title="Subscribers"
             value={analytics?.subscriberCount || 0}
             icon={Users}
+            trend="up"
+            trendValue="+24%"
           />
         </div>
 
-        {/* Quick Stats */}
+        {/* Charts Row */}
+        <div className="grid gap-4 md:grid-cols-7">
+          <Card className="md:col-span-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Views Overview
+              </CardTitle>
+              <CardDescription>Daily page views for the last 7 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={viewsData}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="views" 
+                      stroke="hsl(var(--primary))" 
+                      fillOpacity={1} 
+                      fill="url(#colorViews)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Content by Category
+              </CardTitle>
+              <CardDescription>Distribution of articles</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {categoryData.map((cat) => (
+                  <div key={cat.name} className="flex items-center gap-2 text-sm">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <span className="text-muted-foreground">{cat.name}</span>
+                    <span className="font-medium ml-auto">{cat.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent & Quick Actions */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -117,7 +248,7 @@ const AdminDashboard = () => {
                     </Link>
                   </p>
                 ) : (
-                  analytics?.recentArticles?.map((article: any) => (
+                  analytics?.recentArticles?.slice(0, 5).map((article: any) => (
                     <div
                       key={article.id}
                       className="flex items-center justify-between"
@@ -129,9 +260,11 @@ const AdminDashboard = () => {
                         >
                           {article.title}
                         </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {article.category?.name}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{article.category?.name}</span>
+                          <span>•</span>
+                          <span>{article.view_count || 0} views</span>
+                        </div>
                       </div>
                       <Badge
                         variant={
@@ -185,10 +318,74 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                 </Link>
+                <Link
+                  to="/admin/subscribers"
+                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors"
+                >
+                  <Users className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">View Subscribers</p>
+                    <p className="text-xs text-muted-foreground">
+                      Manage email subscribers
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  to="/admin/media"
+                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors"
+                >
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">Media Library</p>
+                    <p className="text-xs text-muted-foreground">
+                      Upload and manage files
+                    </p>
+                  </div>
+                </Link>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Content Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Content Status</CardTitle>
+            <CardDescription>Overview of your article pipeline</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Published</span>
+                  <span className="font-medium">{analytics?.publishedArticles || 0}</span>
+                </div>
+                <Progress value={75} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Draft</span>
+                  <span className="font-medium">{(analytics?.totalArticles || 0) - (analytics?.publishedArticles || 0)}</span>
+                </div>
+                <Progress value={20} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Scheduled</span>
+                  <span className="font-medium">0</span>
+                </div>
+                <Progress value={5} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Archived</span>
+                  <span className="font-medium">0</span>
+                </div>
+                <Progress value={0} className="h-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
