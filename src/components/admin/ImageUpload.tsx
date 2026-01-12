@@ -242,9 +242,9 @@ export const ImageUpload = ({
   };
 
   const aspectRatioClass = {
-    square: 'aspect-square',
-    video: 'aspect-video',
-    wide: 'aspect-[21/9]',
+    square: 'aspect-square max-h-48 sm:max-h-64',
+    video: 'aspect-video max-h-40 sm:max-h-52',
+    wide: 'aspect-[21/9] max-h-32 sm:max-h-40',
   }[aspectRatio];
 
   if (value) {

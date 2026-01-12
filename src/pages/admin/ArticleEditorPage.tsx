@@ -50,6 +50,7 @@ const ArticleEditorPage = () => {
     content: '',
     featured_image: '',
     featured_image_alt: '',
+    video_url: '',
     category_id: '',
     status: 'draft' as 'draft' | 'published' | 'scheduled' | 'archived',
     is_featured: false,
@@ -71,6 +72,7 @@ const ArticleEditorPage = () => {
         content: existingArticle.content || '',
         featured_image: existingArticle.featured_image || '',
         featured_image_alt: existingArticle.featured_image_alt || '',
+        video_url: '', // video_url not stored in DB yet; could be extracted from content if needed
         category_id: existingArticle.category_id || '',
         status: existingArticle.status || 'draft',
         is_featured: existingArticle.is_featured || false,
@@ -230,35 +232,61 @@ const ArticleEditorPage = () => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Featured Image</CardTitle>
-                <CardDescription>Upload or paste image URL (WebP recommended, max 300KB)</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Featured Media</CardTitle>
+                <CardDescription className="text-xs">Upload image or embed video (WebP recommended, max 300KB)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ImageUpload
-                  value={formData.featured_image}
-                  onChange={(url) => setFormData({ ...formData, featured_image: url })}
-                  folder="articles"
-                  aspectRatio="video"
-                />
-                
-                <div className="space-y-2">
-                  <Label htmlFor="featured_image">Or paste Image URL</Label>
-                  <Input
-                    id="featured_image"
-                    value={formData.featured_image}
-                    onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                    placeholder="https://example.com/image.webp"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="featured_image_alt">Alt Text (required for SEO)</Label>
-                  <Input
-                    id="featured_image_alt"
-                    value={formData.featured_image_alt}
-                    onChange={(e) => setFormData({ ...formData, featured_image_alt: e.target.value })}
-                    placeholder="Describe the image for accessibility"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Image Upload - Compact */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Featured Image</Label>
+                    <ImageUpload
+                      value={formData.featured_image}
+                      onChange={(url) => setFormData({ ...formData, featured_image: url })}
+                      folder="articles"
+                      aspectRatio="video"
+                    />
+                    <Input
+                      id="featured_image"
+                      value={formData.featured_image}
+                      onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                      placeholder="Or paste image URL"
+                      className="text-sm"
+                    />
+                    <Input
+                      id="featured_image_alt"
+                      value={formData.featured_image_alt}
+                      onChange={(e) => setFormData({ ...formData, featured_image_alt: e.target.value })}
+                      placeholder="Alt text for SEO"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Video Embed URL */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Video Embed URL</Label>
+                    <Input
+                      id="video_url"
+                      value={formData.video_url}
+                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                      placeholder="https://youtube.com/embed/... or Vimeo URL"
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste YouTube, Vimeo, or other embed URLs. Video appears in article content.
+                    </p>
+                    {formData.video_url && (
+                      <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
+                        <iframe
+                          src={formData.video_url.replace('watch?v=', 'embed/')}
+                          className="w-full h-full"
+                          allowFullScreen
+                          title="Video preview"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
