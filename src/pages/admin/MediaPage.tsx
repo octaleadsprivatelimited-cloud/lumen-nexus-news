@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Image, FileText, Film, Search, Grid, List, Copy, ExternalLink, Trash } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Upload, Image, FileText, Film, Search, Grid, List, Copy, ExternalLink, Trash, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { ImageUpload } from '@/components/admin/ImageUpload';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
 interface MediaItem {
   id: string;
@@ -24,51 +28,70 @@ interface MediaItem {
   uploadedAt: string;
 }
 
-// Mock media data - in production this would come from Supabase Storage
-const mockMedia: MediaItem[] = [
-  {
-    id: '1',
-    name: 'hero-image.jpg',
-    url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop',
-    type: 'image',
-    size: '245 KB',
-    uploadedAt: '2025-01-10',
-  },
-  {
-    id: '2',
-    name: 'tech-article.jpg',
-    url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
-    type: 'image',
-    size: '180 KB',
-    uploadedAt: '2025-01-09',
-  },
-  {
-    id: '3',
-    name: 'health-wellness.jpg',
-    url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
-    type: 'image',
-    size: '312 KB',
-    uploadedAt: '2025-01-08',
-  },
-  {
-    id: '4',
-    name: 'business-meeting.jpg',
-    url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop',
-    type: 'image',
-    size: '198 KB',
-    uploadedAt: '2025-01-07',
-  },
-];
-
 const MediaPage = () => {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState('');
 
-  const filteredMedia = mockMedia.filter((item) => {
+  // Fetch media from storage
+  const fetchMedia = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from('images')
+        .list('uploads', {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' },
+        });
+
+      if (error) throw error;
+
+      const items: MediaItem[] = (data || [])
+        .filter(file => file.name !== '.emptyFolderPlaceholder')
+        .map(file => {
+          const { data: urlData } = supabase.storage
+            .from('images')
+            .getPublicUrl(`uploads/${file.name}`);
+          
+          return {
+            id: file.id,
+            name: file.name,
+            url: urlData.publicUrl,
+            type: 'image' as const,
+            size: formatFileSize(file.metadata?.size || 0),
+            uploadedAt: file.created_at || new Date().toISOString(),
+          };
+        });
+
+      setMediaItems(items);
+    } catch (error) {
+      console.error('Error fetching media:', error);
+      toast.error('Failed to load media');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMedia();
+  }, []);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 KB';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(0)) + ' ' + sizes[i];
+  };
+
+  const filteredMedia = mediaItems.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === 'all' || item.type === typeFilter;
     return matchesSearch && matchesType;
@@ -76,7 +99,35 @@ const MediaPage = () => {
 
   const handleCopyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
-    toast({ title: 'URL copied to clipboard' });
+    toast.success('URL copied to clipboard');
+  };
+
+  const handleDelete = async () => {
+    if (!selectedMedia) return;
+    
+    setIsDeleting(true);
+    try {
+      const filePath = `uploads/${selectedMedia.name}`;
+      const { error } = await supabase.storage
+        .from('images')
+        .remove([filePath]);
+
+      if (error) throw error;
+
+      toast.success('File deleted successfully');
+      setSelectedMedia(null);
+      fetchMedia();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('Failed to delete file');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUploadSuccess = (url: string) => {
+    setUploadedUrl(url);
+    fetchMedia();
   };
 
   const getTypeIcon = (type: string) => {
@@ -94,7 +145,7 @@ const MediaPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Media Library</h1>
-            <p className="text-muted-foreground">Manage your uploaded files and images</p>
+            <p className="text-muted-foreground">Manage your uploaded images (WebP optimized)</p>
           </div>
           <Button onClick={() => setUploadDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
@@ -118,8 +169,6 @@ const MediaPage = () => {
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="image">Images</TabsTrigger>
-                <TabsTrigger value="document">Documents</TabsTrigger>
-                <TabsTrigger value="video">Videos</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -142,13 +191,25 @@ const MediaPage = () => {
         </div>
 
         {/* Media Grid/List */}
-        {filteredMedia.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-square" />
+                <CardContent className="p-3">
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredMedia.length === 0 ? (
           <div className="text-center py-12 border rounded-lg">
             <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No media files found</p>
             <Button className="mt-4" onClick={() => setUploadDialogOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
-              Upload your first file
+              Upload your first image
             </Button>
           </div>
         ) : viewMode === 'grid' ? (
@@ -165,6 +226,7 @@ const MediaPage = () => {
                       src={item.url} 
                       alt={item.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -189,14 +251,16 @@ const MediaPage = () => {
               >
                 <div className="h-12 w-12 rounded bg-muted flex items-center justify-center overflow-hidden">
                   {item.type === 'image' ? (
-                    <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     getTypeIcon(item.type)
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">{item.size} • {item.uploadedAt}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.size} • {format(new Date(item.uploadedAt), 'MMM d, yyyy')}
+                  </p>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleCopyUrl(item.url); }}>
@@ -229,6 +293,7 @@ const MediaPage = () => {
                   src={selectedMedia.url} 
                   alt={selectedMedia.name}
                   className="w-full rounded-lg"
+                  loading="lazy"
                 />
               )}
               
@@ -247,7 +312,7 @@ const MediaPage = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Uploaded</p>
-                  <p className="font-medium">{selectedMedia.uploadedAt}</p>
+                  <p className="font-medium">{format(new Date(selectedMedia.uploadedAt), 'MMM d, yyyy')}</p>
                 </div>
               </div>
 
@@ -264,8 +329,17 @@ const MediaPage = () => {
           )}
 
           <DialogFooter>
-            <Button variant="destructive" size="sm">
-              <Trash className="h-4 w-4 mr-2" />
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash className="h-4 w-4 mr-2" />
+              )}
               Delete
             </Button>
             <Button variant="outline" onClick={() => setSelectedMedia(null)}>
@@ -279,23 +353,29 @@ const MediaPage = () => {
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload Files</DialogTitle>
-            <DialogDescription>Upload images, documents, or videos</DialogDescription>
+            <DialogTitle>Upload Image</DialogTitle>
+            <DialogDescription>
+              Upload images (PNG, JPG, WEBP). Files will be optimized automatically.
+            </DialogDescription>
           </DialogHeader>
           
-          <div className="border-2 border-dashed rounded-lg p-8 text-center">
-            <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-            <p className="font-medium mb-1">Drag and drop files here</p>
-            <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-            <Button variant="outline">Browse Files</Button>
-            <p className="text-xs text-muted-foreground mt-4">
-              Supports: JPG, PNG, GIF, PDF, DOC, MP4 (max 10MB)
-            </p>
-          </div>
+          <ImageUpload 
+            value={uploadedUrl}
+            onChange={handleUploadSuccess}
+            folder="uploads"
+            aspectRatio="video"
+          />
+          
+          <p className="text-xs text-muted-foreground text-center">
+            Max size: 300KB after compression • WebP format recommended
+          </p>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => {
+              setUploadDialogOpen(false);
+              setUploadedUrl('');
+            }}>
+              {uploadedUrl ? 'Done' : 'Cancel'}
             </Button>
           </DialogFooter>
         </DialogContent>

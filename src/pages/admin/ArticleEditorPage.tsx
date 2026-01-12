@@ -17,9 +17,10 @@ import { Switch } from '@/components/ui/switch';
 import { useArticle, useCreateArticle, useUpdateArticle } from '@/hooks/useArticles';
 import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImageUpload } from '@/components/admin/ImageUpload';
 
 const generateSlug = (title: string): string => {
   return title
@@ -34,7 +35,6 @@ const ArticleEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const isNew = id === 'new';
 
   const { data: existingArticle, isLoading: articleLoading } = useArticle(isNew ? '' : (id || ''));
@@ -94,7 +94,7 @@ const ArticleEditorPage = () => {
 
   const handleSubmit = async (status?: 'draft' | 'published') => {
     if (!formData.title || !formData.slug) {
-      toast({ title: 'Please fill in required fields', variant: 'destructive' });
+      toast.error('Please fill in required fields');
       return;
     }
 
@@ -122,14 +122,14 @@ const ArticleEditorPage = () => {
     try {
       if (isNew) {
         await createArticle.mutateAsync(articleData);
-        toast({ title: 'Article created successfully' });
+        toast.success('Article created successfully');
       } else {
         await updateArticle.mutateAsync({ id: id!, ...articleData });
-        toast({ title: 'Article updated successfully' });
+        toast.success('Article updated successfully');
       }
       navigate('/admin/articles');
     } catch (error: any) {
-      toast({ title: 'Error saving article', description: error.message, variant: 'destructive' });
+      toast.error(error.message || 'Error saving article');
     }
   };
 
@@ -234,19 +234,27 @@ const ArticleEditorPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Featured Image</CardTitle>
+                <CardDescription>Upload or paste image URL (WebP recommended, max 300KB)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <ImageUpload
+                  value={formData.featured_image}
+                  onChange={(url) => setFormData({ ...formData, featured_image: url })}
+                  folder="articles"
+                  aspectRatio="video"
+                />
+                
                 <div className="space-y-2">
-                  <Label htmlFor="featured_image">Image URL</Label>
+                  <Label htmlFor="featured_image">Or paste Image URL</Label>
                   <Input
                     id="featured_image"
                     value={formData.featured_image}
                     onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="https://example.com/image.webp"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="featured_image_alt">Alt Text</Label>
+                  <Label htmlFor="featured_image_alt">Alt Text (required for SEO)</Label>
                   <Input
                     id="featured_image_alt"
                     value={formData.featured_image_alt}
@@ -254,15 +262,6 @@ const ArticleEditorPage = () => {
                     placeholder="Describe the image for accessibility"
                   />
                 </div>
-                {formData.featured_image && (
-                  <div className="mt-4">
-                    <img
-                      src={formData.featured_image}
-                      alt={formData.featured_image_alt || 'Preview'}
-                      className="max-w-md rounded-lg border"
-                    />
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>

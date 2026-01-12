@@ -1,13 +1,14 @@
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { FileText, Eye, FolderOpen, Users, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, BarChart3, PieChart } from 'lucide-react';
+import { FileText, Eye, FolderOpen, Users, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, BarChart3, PieChart, Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { PingStatusCard } from '@/components/admin/PingStatusCard';
 
 const StatCard = ({ 
   title, 
@@ -111,6 +112,8 @@ const AdminDashboard = () => {
             </Badge>
           </Link>
         </div>
+        {/* Backend Status */}
+        <PingStatusCard />
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -334,11 +337,11 @@ const AdminDashboard = () => {
                   to="/admin/media"
                   className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors"
                 >
-                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <Image className="h-5 w-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">Media Library</p>
                     <p className="text-xs text-muted-foreground">
-                      Upload and manage files
+                      Upload and manage images
                     </p>
                   </div>
                 </Link>
