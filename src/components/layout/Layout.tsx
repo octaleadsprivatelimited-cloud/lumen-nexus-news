@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import { BackToTop } from "./BackToTop";
 import AdSlot from "@/components/ads/AdSlot";
 
 interface LayoutProps {
@@ -25,6 +26,7 @@ export function Layout({ children, showHeaderAd = true, showFooterAd = true }: L
         </div>
       )}
       <Footer />
+      <BackToTop />
     </div>
   );
 }
