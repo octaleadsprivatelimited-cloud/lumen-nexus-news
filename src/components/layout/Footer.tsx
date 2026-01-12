@@ -158,7 +158,7 @@ export function Footer() {
             © {new Date().getFullYear()} 9knowledge. All rights reserved.
           </p>
           <p className="text-sm text-primary-foreground/50">
-            Built with ❤️ for knowledge seekers
+            Developed By octaleads Pvt Ltd.
           </p>
         </div>
       </div>
