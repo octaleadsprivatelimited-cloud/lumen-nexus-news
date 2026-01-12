@@ -1,0 +1,417 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import AdminLayout from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useArticle, useCreateArticle, useUpdateArticle } from '@/hooks/useArticles';
+import { useCategories } from '@/hooks/useCategories';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+};
+
+const ArticleEditorPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isNew = id === 'new';
+
+  const { data: existingArticle, isLoading: articleLoading } = useArticle(isNew ? '' : (id || ''));
+  const { data: categories } = useCategories();
+  const createArticle = useCreateArticle();
+  const updateArticle = useUpdateArticle();
+
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    featured_image: '',
+    featured_image_alt: '',
+    category_id: '',
+    status: 'draft' as 'draft' | 'published' | 'scheduled' | 'archived',
+    is_featured: false,
+    is_trending: false,
+    meta_title: '',
+    meta_description: '',
+    meta_keywords: '',
+    og_image: '',
+    canonical_url: '',
+    no_index: false,
+  });
+
+  useEffect(() => {
+    if (existingArticle) {
+      setFormData({
+        title: existingArticle.title || '',
+        slug: existingArticle.slug || '',
+        excerpt: existingArticle.excerpt || '',
+        content: existingArticle.content || '',
+        featured_image: existingArticle.featured_image || '',
+        featured_image_alt: existingArticle.featured_image_alt || '',
+        category_id: existingArticle.category_id || '',
+        status: existingArticle.status || 'draft',
+        is_featured: existingArticle.is_featured || false,
+        is_trending: existingArticle.is_trending || false,
+        meta_title: existingArticle.meta_title || '',
+        meta_description: existingArticle.meta_description || '',
+        meta_keywords: existingArticle.meta_keywords?.join(', ') || '',
+        og_image: existingArticle.og_image || '',
+        canonical_url: existingArticle.canonical_url || '',
+        no_index: existingArticle.no_index || false,
+      });
+    }
+  }, [existingArticle]);
+
+  const handleTitleChange = (title: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      title,
+      slug: isNew ? generateSlug(title) : prev.slug,
+    }));
+  };
+
+  const handleSubmit = async (status?: 'draft' | 'published') => {
+    if (!formData.title || !formData.slug) {
+      toast({ title: 'Please fill in required fields', variant: 'destructive' });
+      return;
+    }
+
+    const articleData = {
+      title: formData.title,
+      slug: formData.slug,
+      excerpt: formData.excerpt || null,
+      content: formData.content || null,
+      featured_image: formData.featured_image || null,
+      featured_image_alt: formData.featured_image_alt || null,
+      category_id: formData.category_id || null,
+      status: status || formData.status,
+      is_featured: formData.is_featured,
+      is_trending: formData.is_trending,
+      meta_title: formData.meta_title || null,
+      meta_description: formData.meta_description || null,
+      meta_keywords: formData.meta_keywords ? formData.meta_keywords.split(',').map((k) => k.trim()) : null,
+      og_image: formData.og_image || null,
+      canonical_url: formData.canonical_url || null,
+      no_index: formData.no_index,
+      author_id: user?.id || null,
+      published_at: status === 'published' ? new Date().toISOString() : null,
+    };
+
+    try {
+      if (isNew) {
+        await createArticle.mutateAsync(articleData);
+        toast({ title: 'Article created successfully' });
+      } else {
+        await updateArticle.mutateAsync({ id: id!, ...articleData });
+        toast({ title: 'Article updated successfully' });
+      }
+      navigate('/admin/articles');
+    } catch (error: any) {
+      toast({ title: 'Error saving article', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  if (!isNew && articleLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/articles')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">
+                {isNew ? 'New Article' : 'Edit Article'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isNew ? 'Create a new blog post' : 'Update your article'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => handleSubmit('draft')}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Draft
+            </Button>
+            <Button onClick={() => handleSubmit('published')}>
+              <Eye className="h-4 w-4 mr-2" />
+              Publish
+            </Button>
+          </div>
+        </div>
+
+        <Tabs defaultValue="content" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="seo">SEO</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="content" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Article Content</CardTitle>
+                <CardDescription>Write your article content here</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    placeholder="Enter article title"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug *</Label>
+                  <Input
+                    id="slug"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    placeholder="article-url-slug"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="excerpt">Excerpt</Label>
+                  <Textarea
+                    id="excerpt"
+                    value={formData.excerpt}
+                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                    placeholder="Brief summary of the article"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    placeholder="Write your article content here..."
+                    rows={15}
+                    className="font-mono"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Featured Image</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="featured_image">Image URL</Label>
+                  <Input
+                    id="featured_image"
+                    value={formData.featured_image}
+                    onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="featured_image_alt">Alt Text</Label>
+                  <Input
+                    id="featured_image_alt"
+                    value={formData.featured_image_alt}
+                    onChange={(e) => setFormData({ ...formData, featured_image_alt: e.target.value })}
+                    placeholder="Describe the image for accessibility"
+                  />
+                </div>
+                {formData.featured_image && (
+                  <div className="mt-4">
+                    <img
+                      src={formData.featured_image}
+                      alt={formData.featured_image_alt || 'Preview'}
+                      className="max-w-md rounded-lg border"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="seo" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>SEO Settings</CardTitle>
+                <CardDescription>Optimize your article for search engines</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="meta_title">Meta Title</Label>
+                  <Input
+                    id="meta_title"
+                    value={formData.meta_title}
+                    onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                    placeholder="SEO title (max 60 characters)"
+                    maxLength={60}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.meta_title.length}/60 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta_description">Meta Description</Label>
+                  <Textarea
+                    id="meta_description"
+                    value={formData.meta_description}
+                    onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                    placeholder="SEO description (max 160 characters)"
+                    maxLength={160}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.meta_description.length}/160 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta_keywords">Keywords</Label>
+                  <Input
+                    id="meta_keywords"
+                    value={formData.meta_keywords}
+                    onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="og_image">OpenGraph Image URL</Label>
+                  <Input
+                    id="og_image"
+                    value={formData.og_image}
+                    onChange={(e) => setFormData({ ...formData, og_image: e.target.value })}
+                    placeholder="https://example.com/og-image.jpg"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="canonical_url">Canonical URL</Label>
+                  <Input
+                    id="canonical_url"
+                    value={formData.canonical_url}
+                    onChange={(e) => setFormData({ ...formData, canonical_url: e.target.value })}
+                    placeholder="https://9knowledge.com/article/..."
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="no_index"
+                    checked={formData.no_index}
+                    onCheckedChange={(checked) => setFormData({ ...formData, no_index: checked })}
+                  />
+                  <Label htmlFor="no_index">No Index (hide from search engines)</Label>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Article Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_featured"
+                    checked={formData.is_featured}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
+                  />
+                  <Label htmlFor="is_featured">Featured Article</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_trending"
+                    checked={formData.is_trending}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_trending: checked })}
+                  />
+                  <Label htmlFor="is_trending">Trending Article</Label>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default ArticleEditorPage;
