@@ -7,7 +7,7 @@ import { formatRelativeDate } from "@/lib/data";
 
 interface ArticleCardProps {
   article: Article;
-  variant?: "default" | "featured" | "horizontal" | "compact";
+  variant?: "default" | "featured" | "horizontal" | "compact" | "mobile";
   className?: string;
 }
 
@@ -25,24 +25,24 @@ export function ArticleCard({ article, variant = "default", className }: Article
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6">
-            <CategoryBadge category={article.category} className="mb-3" />
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-primary-foreground mb-2 line-clamp-2">
+          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+            <CategoryBadge category={article.category} className="mb-2 md:mb-3" />
+            <h2 className="text-lg md:text-2xl lg:text-3xl font-display font-bold text-primary-foreground mb-1 md:mb-2 line-clamp-2">
               {article.title}
             </h2>
             <p className="text-primary-foreground/80 text-sm mb-3 line-clamp-2 hidden md:block">
               {article.excerpt}
             </p>
-            <div className="flex items-center gap-4 text-xs text-primary-foreground/70">
+            <div className="flex items-center gap-2 md:gap-4 text-xs text-primary-foreground/70">
               <span>{formatRelativeDate(article.publishedAt)}</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {article.readingTime} min read
+                {article.readingTime} min
               </span>
               {article.isTrending && (
                 <span className="flex items-center gap-1 text-accent">
                   <TrendingUp className="h-3 w-3" />
-                  Trending
+                  <span className="hidden sm:inline">Trending</span>
                 </span>
               )}
             </div>
@@ -109,11 +109,44 @@ export function ArticleCard({ article, variant = "default", className }: Article
     );
   }
 
-  // Default variant
+  // Mobile-optimized card (more compact)
+  if (variant === "mobile") {
+    return (
+      <article className={cn("group article-card bg-card rounded-lg overflow-hidden border border-border", className)}>
+        <Link to={`/article/${article.slug}`} className="block">
+          <div className="aspect-[4/3] overflow-hidden">
+            <img
+              src={article.featuredImage}
+              alt={article.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+          </div>
+        </Link>
+        <div className="p-2.5">
+          <CategoryBadge category={article.category} size="sm" className="mb-1.5" />
+          <Link to={`/article/${article.slug}`}>
+            <h3 className="font-display font-bold text-sm text-foreground mb-1 line-clamp-2 group-hover:text-accent transition-colors leading-tight">
+              {article.title}
+            </h3>
+          </Link>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <span>{formatRelativeDate(article.publishedAt)}</span>
+            <span className="flex items-center gap-0.5">
+              <Clock className="h-2.5 w-2.5" />
+              {article.readingTime}m
+            </span>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // Default variant - responsive with mobile optimization
   return (
-    <article className={cn("group article-card bg-card rounded-xl overflow-hidden border border-border", className)}>
+    <article className={cn("group article-card bg-card rounded-lg md:rounded-xl overflow-hidden border border-border", className)}>
       <Link to={`/article/${article.slug}`} className="block">
-        <div className="aspect-[16/10] overflow-hidden">
+        <div className="aspect-[4/3] md:aspect-[16/10] overflow-hidden">
           <img
             src={article.featuredImage}
             alt={article.title}
@@ -122,26 +155,26 @@ export function ArticleCard({ article, variant = "default", className }: Article
           />
         </div>
       </Link>
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <CategoryBadge category={article.category} />
+      <div className="p-2.5 md:p-4">
+        <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+          <CategoryBadge category={article.category} size="sm" className="md:text-xs" />
           {article.isTrending && (
-            <span className="flex items-center gap-1 text-xs text-accent font-medium">
+            <span className="hidden md:flex items-center gap-1 text-xs text-accent font-medium">
               <TrendingUp className="h-3 w-3" />
               Trending
             </span>
           )}
         </div>
         <Link to={`/article/${article.slug}`}>
-          <h3 className="font-display font-bold text-lg text-foreground mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+          <h3 className="font-display font-bold text-sm md:text-lg text-foreground mb-1 md:mb-2 line-clamp-2 group-hover:text-accent transition-colors leading-tight">
             {article.title}
           </h3>
         </Link>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+        <p className="hidden md:block text-sm text-muted-foreground line-clamp-2 mb-3">
           {article.excerpt}
         </p>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between text-[10px] md:text-xs text-muted-foreground">
+          <div className="hidden md:flex items-center gap-2">
             <img
               src={article.author.avatar}
               alt={article.author.name}
@@ -149,11 +182,11 @@ export function ArticleCard({ article, variant = "default", className }: Article
             />
             <span className="font-medium">{article.author.name}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <span>{formatRelativeDate(article.publishedAt)}</span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {article.readingTime} min
+            <span className="flex items-center gap-0.5 md:gap-1">
+              <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
+              {article.readingTime}m
             </span>
           </div>
         </div>
