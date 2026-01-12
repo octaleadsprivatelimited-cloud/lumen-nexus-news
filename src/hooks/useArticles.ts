@@ -10,6 +10,7 @@ interface ArticleInsert {
   content?: string | null;
   featured_image?: string | null;
   featured_image_alt?: string | null;
+  video_url?: string | null;
   author_id?: string | null;
   category_id?: string | null;
   status?: ArticleStatus | null;

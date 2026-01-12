@@ -72,7 +72,7 @@ const ArticleEditorPage = () => {
         content: existingArticle.content || '',
         featured_image: existingArticle.featured_image || '',
         featured_image_alt: existingArticle.featured_image_alt || '',
-        video_url: '', // video_url not stored in DB yet; could be extracted from content if needed
+        video_url: (existingArticle as any).video_url || '',
         category_id: existingArticle.category_id || '',
         status: existingArticle.status || 'draft',
         is_featured: existingArticle.is_featured || false,
@@ -108,6 +108,7 @@ const ArticleEditorPage = () => {
       content: formData.content || null,
       featured_image: formData.featured_image || null,
       featured_image_alt: formData.featured_image_alt || null,
+      video_url: formData.video_url || null,
       category_id: formData.category_id || null,
       status: status || formData.status,
       is_featured: formData.is_featured,

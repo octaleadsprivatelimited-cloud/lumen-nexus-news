@@ -176,6 +176,21 @@ const ArticlePage = () => {
           </div>
         )}
 
+        {/* Embedded Video */}
+        {(article as any).video_url && (
+          <div className="container max-w-4xl mx-auto mb-8">
+            <div className="aspect-video rounded-xl overflow-hidden border bg-muted">
+              <iframe
+                src={(article as any).video_url.replace('watch?v=', 'embed/')}
+                className="w-full h-full"
+                allowFullScreen
+                title={`Video: ${article.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Article Content */}
         <div className="container max-w-4xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

@@ -209,6 +209,7 @@ export const usePublicArticleBySlug = (slug: string) => {
           content,
           featured_image,
           featured_image_alt,
+          video_url,
           reading_time,
           published_at,
           is_featured,
