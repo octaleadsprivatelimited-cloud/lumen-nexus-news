@@ -1,10 +1,18 @@
 import { Link } from "react-router-dom";
-import { Mail, Twitter, Facebook, Linkedin, Instagram } from "lucide-react";
+import { Mail, Twitter, Facebook, Linkedin, Instagram, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { categories } from "@/lib/data";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 
 export function Footer() {
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
       {/* Newsletter Section */}
@@ -59,72 +67,87 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Categories */}
-          <div>
-            <h4 className="font-semibold mb-4">Categories</h4>
-            <ul className="space-y-2">
-              {categories.slice(0, 5).map((category) => (
-                <li key={category.id}>
-                  <Link
-                    to={`/category/${category.slug}`}
-                    className="text-sm text-primary-foreground/70 hover:text-accent transition-colors"
-                  >
-                    {category.name}
+          {/* Categories - Collapsible on mobile */}
+          <Collapsible open={openSections.categories} onOpenChange={() => toggleSection('categories')}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full md:cursor-default">
+              <h4 className="font-semibold">Categories</h4>
+              <ChevronDown className={`h-4 w-4 md:hidden transition-transform ${openSections.categories ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="md:!block">
+              <ul className="space-y-2 mt-4">
+                {categories.slice(0, 5).map((category) => (
+                  <li key={category.id}>
+                    <Link
+                      to={`/category/${category.slug}`}
+                      className="text-sm text-primary-foreground/70 hover:text-accent transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* More Categories - Collapsible on mobile */}
+          <Collapsible open={openSections.more} onOpenChange={() => toggleSection('more')}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full md:cursor-default">
+              <h4 className="font-semibold">More</h4>
+              <ChevronDown className={`h-4 w-4 md:hidden transition-transform ${openSections.more ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="md:!block">
+              <ul className="space-y-2 mt-4">
+                {categories.slice(5).map((category) => (
+                  <li key={category.id}>
+                    <Link
+                      to={`/category/${category.slug}`}
+                      className="text-sm text-primary-foreground/70 hover:text-accent transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Company - Collapsible on mobile */}
+          <Collapsible open={openSections.company} onOpenChange={() => toggleSection('company')}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full md:cursor-default">
+              <h4 className="font-semibold">Company</h4>
+              <ChevronDown className={`h-4 w-4 md:hidden transition-transform ${openSections.company ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="md:!block">
+              <ul className="space-y-2 mt-4">
+                <li>
+                  <Link to="/about" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
+                    About Us
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* More Categories */}
-          <div>
-            <h4 className="font-semibold mb-4">More</h4>
-            <ul className="space-y-2">
-              {categories.slice(5).map((category) => (
-                <li key={category.id}>
-                  <Link
-                    to={`/category/${category.slug}`}
-                    className="text-sm text-primary-foreground/70 hover:text-accent transition-colors"
-                  >
-                    {category.name}
+                <li>
+                  <Link to="/contact" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
+                    Contact
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/about" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:info@9knowledge.com" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  info@9knowledge.com
-                </a>
-              </li>
-            </ul>
-          </div>
+                <li>
+                  <Link to="/privacy" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <a href="mailto:info@9knowledge.com" className="text-sm text-primary-foreground/70 hover:text-accent transition-colors flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    info@9knowledge.com
+                  </a>
+                </li>
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </div>
 
