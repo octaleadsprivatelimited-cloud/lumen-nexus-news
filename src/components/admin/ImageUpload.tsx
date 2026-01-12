@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ImageCropDialog from './ImageCropDialog';
 
 interface ImageUploadProps {
   value?: string;
@@ -12,11 +13,12 @@ interface ImageUploadProps {
   className?: string;
   aspectRatio?: 'square' | 'video' | 'wide';
   maxSizeKB?: number;
+  enableCropping?: boolean;
 }
 
 // Convert image to WebP and compress to target size
 const compressToWebP = async (
-  file: File,
+  file: File | Blob,
   maxSizeKB: number = 200
 ): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -122,7 +124,12 @@ const compressToWebP = async (
     };
 
     img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
+    
+    if (file instanceof File) {
+      img.src = URL.createObjectURL(file);
+    } else {
+      img.src = URL.createObjectURL(file);
+    }
   });
 };
 
@@ -133,11 +140,17 @@ export const ImageUpload = ({
   className,
   aspectRatio = 'video',
   maxSizeKB = 200,
+  enableCropping = true,
 }: ImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [compressionProgress, setCompressionProgress] = useState<string | null>(null);
+  
+  // Cropping state
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const [originalFileName, setOriginalFileName] = useState<string>('image');
 
   const validateFile = (file: File): string | null => {
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
@@ -153,7 +166,7 @@ export const ImageUpload = ({
     return null;
   };
 
-  const uploadImage = async (file: File) => {
+  const handleFileSelect = (file: File) => {
     setError(null);
     setCompressionProgress(null);
     
@@ -164,14 +177,31 @@ export const ImageUpload = ({
       return;
     }
 
+    setOriginalFileName(file.name);
+
+    if (enableCropping) {
+      // Show crop dialog
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedImageSrc(reader.result as string);
+        setShowCropDialog(true);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Direct upload without cropping
+      uploadImage(file);
+    }
+  };
+
+  const uploadImage = async (fileOrBlob: File | Blob) => {
     setIsUploading(true);
 
     try {
       // Compress to WebP client-side
       setCompressionProgress('Converting to WebP...');
-      const compressedBlob = await compressToWebP(file, maxSizeKB);
+      const compressedBlob = await compressToWebP(fileOrBlob, maxSizeKB);
       
-      const originalSizeKB = Math.round(file.size / 1024);
+      const originalSizeKB = Math.round(fileOrBlob.size / 1024);
       const compressedSizeKB = Math.round(compressedBlob.size / 1024);
       
       setCompressionProgress(`Compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB`);
@@ -179,7 +209,7 @@ export const ImageUpload = ({
       // Create a new File from the blob
       const webpFile = new File(
         [compressedBlob], 
-        file.name.replace(/\.[^/.]+$/, '') + '.webp',
+        originalFileName.replace(/\.[^/.]+$/, '') + '.webp',
         { type: 'image/webp' }
       );
 
@@ -213,6 +243,17 @@ export const ImageUpload = ({
     }
   };
 
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setShowCropDialog(false);
+    setSelectedImageSrc(null);
+    uploadImage(croppedBlob);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropDialog(false);
+    setSelectedImageSrc(null);
+  };
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -229,13 +270,13 @@ export const ImageUpload = ({
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      uploadImage(e.dataTransfer.files[0]);
+      handleFileSelect(e.dataTransfer.files[0]);
     }
-  }, [folder, maxSizeKB]);
+  }, [enableCropping, folder, maxSizeKB]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      uploadImage(e.target.files[0]);
+      handleFileSelect(e.target.files[0]);
     }
   };
 
@@ -248,6 +289,12 @@ export const ImageUpload = ({
     square: 'aspect-square',
     video: 'aspect-video',
     wide: 'aspect-[21/9]',
+  }[aspectRatio];
+
+  const cropAspectPreset = {
+    square: 'square' as const,
+    video: 'video' as const,
+    wide: 'wide' as const,
   }[aspectRatio];
 
   if (value) {
@@ -273,57 +320,69 @@ export const ImageUpload = ({
   }
 
   return (
-    <div
-      className={cn(
-        'relative rounded-lg border-2 border-dashed transition-colors',
-        dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
-        error ? 'border-destructive' : '',
-        aspectRatioClass,
-        className
-      )}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
-    >
-      <input
-        type="file"
-        accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-        onChange={handleChange}
-        disabled={isUploading}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-      />
-      
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
-        {isUploading ? (
-          <>
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {compressionProgress || 'Processing...'}
-            </p>
-          </>
-        ) : (
-          <>
-            {error ? (
-              <AlertCircle className="h-8 w-8 text-destructive" />
-            ) : (
-              <Upload className="h-8 w-8 text-muted-foreground" />
-            )}
-            <div className="text-center">
-              <p className="text-sm font-medium">
-                {dragActive ? 'Drop image here' : 'Click or drag to upload'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Auto-converts to WebP • Max {maxSizeKB}KB
-              </p>
-              {error && (
-                <p className="text-xs text-destructive mt-2">{error}</p>
-              )}
-            </div>
-          </>
+    <>
+      <div
+        className={cn(
+          'relative rounded-lg border-2 border-dashed transition-colors',
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
+          error ? 'border-destructive' : '',
+          aspectRatioClass,
+          className
         )}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+          onChange={handleChange}
+          disabled={isUploading}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+        />
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+          {isUploading ? (
+            <>
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {compressionProgress || 'Processing...'}
+              </p>
+            </>
+          ) : (
+            <>
+              {error ? (
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <div className="text-center">
+                <p className="text-sm font-medium">
+                  {dragActive ? 'Drop image here' : 'Click or drag to upload'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {enableCropping ? 'Crop & resize • ' : ''}Auto WebP • Max {maxSizeKB}KB
+                </p>
+                {error && (
+                  <p className="text-xs text-destructive mt-2">{error}</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+
+      {selectedImageSrc && (
+        <ImageCropDialog
+          open={showCropDialog}
+          onClose={handleCropCancel}
+          imageSrc={selectedImageSrc}
+          onCropComplete={handleCropComplete}
+          aspectRatioPreset={cropAspectPreset}
+        />
+      )}
+    </>
   );
 };
 
