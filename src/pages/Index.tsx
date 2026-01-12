@@ -4,6 +4,8 @@ import { TrendingSection } from "@/components/home/TrendingSection";
 import { LatestArticles } from "@/components/home/LatestArticles";
 import { CategorySection } from "@/components/home/CategorySection";
 import { NewsletterCTA } from "@/components/home/NewsletterCTA";
+import { WebsiteSchema, OrganizationSchema } from "@/components/seo/StructuredData";
+import { Helmet } from "react-helmet-async";
 import {
   getFeaturedArticles,
   getTrendingArticles,
@@ -23,7 +25,18 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* SEO Meta Tags would go here in production */}
+      {/* SEO Meta Tags */}
+      <Helmet>
+        <title>9knowledge - Your Trusted Knowledge Portal</title>
+        <meta name="description" content="Discover insightful articles on technology, health, business, and more. Stay informed with the latest news and expert analysis." />
+        <meta property="og:title" content="9knowledge - Your Trusted Knowledge Portal" />
+        <meta property="og:description" content="Discover insightful articles on technology, health, business, and more." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://9knowledge.com" />
+        <link rel="canonical" href="https://9knowledge.com" />
+      </Helmet>
+      <WebsiteSchema />
+      <OrganizationSchema />
       
       {/* Hero Section with Featured Articles */}
       <HeroSection featuredArticles={featuredArticles} />

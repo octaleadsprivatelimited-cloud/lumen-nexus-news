@@ -6,6 +6,7 @@ import { SocialShare } from "@/components/articles/SocialShare";
 import { ReadingProgress } from "@/components/articles/ReadingProgress";
 import { Button } from "@/components/ui/button";
 import AdSlot from "@/components/ads/AdSlot";
+import { ArticleSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
 import {
   Clock,
   Calendar,
@@ -41,11 +42,36 @@ const ArticlePage = () => {
 
   const relatedArticles = getRelatedArticles(article);
 
-  const shareUrl = window.location.href;
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : `https://9knowledge.com/article/${slug}`;
   const shareTitle = article.title;
+  const siteUrl = "https://9knowledge.com";
+
+  // Breadcrumb data for structured data
+  const breadcrumbItems = [
+    { name: "Home", url: siteUrl },
+    { name: article.category.name, url: `${siteUrl}/category/${article.category.slug}` },
+    { name: article.title, url: shareUrl },
+  ];
 
   return (
     <Layout>
+      {/* Structured Data for SEO */}
+      <ArticleSchema 
+        article={{
+          title: article.title,
+          excerpt: article.excerpt,
+          content: article.content,
+          featuredImage: article.featuredImage,
+          publishedAt: article.publishedAt,
+          author: article.author,
+          category: article.category,
+          readingTime: article.readingTime,
+          slug: article.slug,
+        }}
+        url={shareUrl}
+      />
+      <BreadcrumbSchema items={breadcrumbItems} />
+
       <ReadingProgress />
       <article>
         {/* Breadcrumb */}
