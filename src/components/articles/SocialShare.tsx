@@ -17,10 +17,9 @@ interface SocialShareProps {
   url: string;
   title: string;
   vertical?: boolean;
-  showLabel?: boolean;
 }
 
-export function SocialShare({ url, title, vertical = false, showLabel = false }: SocialShareProps) {
+export function SocialShare({ url, title, vertical = false }: SocialShareProps) {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard!");
@@ -50,13 +49,13 @@ export function SocialShare({ url, title, vertical = false, showLabel = false }:
   ];
 
   return (
-    <div className={`flex ${vertical ? 'flex-col' : 'flex-row'} gap-2`}>
+    <div className={`flex ${vertical ? 'flex-col items-center' : 'flex-row items-center'} gap-2`}>
       {shareLinks.map((link) => (
         <Button
           key={link.name}
           variant="outline"
-          size={showLabel ? "sm" : "icon"}
-          className="share-btn"
+          size="icon"
+          className="h-9 w-9 shrink-0"
           asChild
         >
           <a
@@ -66,19 +65,17 @@ export function SocialShare({ url, title, vertical = false, showLabel = false }:
             aria-label={`Share on ${link.name}`}
           >
             <link.icon className="h-4 w-4" />
-            {showLabel && <span className="ml-2">{link.name}</span>}
           </a>
         </Button>
       ))}
       <Button
         variant="outline"
-        size={showLabel ? "sm" : "icon"}
-        className="share-btn"
+        size="icon"
+        className="h-9 w-9 shrink-0"
         onClick={handleCopyLink}
         aria-label="Copy link"
       >
         <LinkIcon className="h-4 w-4" />
-        {showLabel && <span className="ml-2">Copy Link</span>}
       </Button>
     </div>
   );

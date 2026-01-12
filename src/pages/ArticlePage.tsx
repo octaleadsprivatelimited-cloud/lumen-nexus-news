@@ -193,11 +193,11 @@ const ArticlePage = () => {
 
         {/* Article Content */}
         <div className="container max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="flex gap-6">
             {/* Share Buttons - Sticky on Desktop */}
-            <aside className="lg:col-span-1">
-              <div className="lg:sticky lg:top-24">
-                <span className="hidden lg:flex items-center justify-center text-xs text-muted-foreground mb-2">
+            <aside className="hidden lg:block w-12 shrink-0">
+              <div className="sticky top-24 flex flex-col items-center gap-3">
+                <span className="text-xs text-muted-foreground">
                   <Share2 className="h-4 w-4" />
                 </span>
                 <SocialShare url={shareUrl} title={shareTitle} vertical />
@@ -205,11 +205,17 @@ const ArticlePage = () => {
             </aside>
 
             {/* Main Content */}
-            <div className="lg:col-span-11">
+            <div className="flex-1 min-w-0">
               <div 
                 className="prose prose-lg max-w-none text-foreground"
                 dangerouslySetInnerHTML={{ __html: article.content || '' }}
               />
+              
+              {/* Mobile Share Buttons */}
+              <div className="lg:hidden mt-8 pt-6 border-t">
+                <p className="text-sm text-muted-foreground mb-3">Share this article</p>
+                <SocialShare url={shareUrl} title={shareTitle} />
+              </div>
               
               {/* In-Article Ad */}
               <AdSlot position="in-article" className="not-prose mt-8" />
