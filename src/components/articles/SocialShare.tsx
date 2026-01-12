@@ -30,21 +30,25 @@ export function SocialShare({ url, title, vertical = false }: SocialShareProps) 
       name: "Twitter",
       icon: Twitter,
       href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+      color: "bg-black hover:bg-black/90 text-white",
     },
     {
       name: "Facebook",
       icon: Facebook,
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      color: "bg-[#1877F2] hover:bg-[#1877F2]/90 text-white",
     },
     {
       name: "LinkedIn",
       icon: Linkedin,
       href: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`,
+      color: "bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white",
     },
     {
       name: "WhatsApp",
       icon: WhatsApp,
       href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`,
+      color: "bg-[#25D366] hover:bg-[#25D366]/90 text-white",
     },
   ];
 
@@ -53,9 +57,8 @@ export function SocialShare({ url, title, vertical = false }: SocialShareProps) 
       {shareLinks.map((link) => (
         <Button
           key={link.name}
-          variant="outline"
           size="icon"
-          className="h-9 w-9 shrink-0"
+          className={`h-9 w-9 shrink-0 border-0 ${link.color}`}
           asChild
         >
           <a
@@ -69,9 +72,8 @@ export function SocialShare({ url, title, vertical = false }: SocialShareProps) 
         </Button>
       ))}
       <Button
-        variant="outline"
         size="icon"
-        className="h-9 w-9 shrink-0"
+        className="h-9 w-9 shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground"
         onClick={handleCopyLink}
         aria-label="Copy link"
       >
