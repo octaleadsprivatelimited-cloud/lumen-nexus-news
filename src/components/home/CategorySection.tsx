@@ -1,11 +1,16 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { ArticleCard } from "@/components/articles/ArticleCard";
-import type { Article, Category } from "@/lib/data";
+import type { PublicArticle } from "@/hooks/usePublicArticles";
 
 interface CategorySectionProps {
-  category: Category;
-  articles: Article[];
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    color?: string | null;
+  };
+  articles: PublicArticle[];
 }
 
 export function CategorySection({ category, articles }: CategorySectionProps) {

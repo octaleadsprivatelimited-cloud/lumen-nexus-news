@@ -1,9 +1,9 @@
 import { TrendingUp } from "lucide-react";
 import { ArticleCard } from "@/components/articles/ArticleCard";
-import type { Article } from "@/lib/data";
+import type { PublicArticle } from "@/hooks/usePublicArticles";
 
 interface TrendingSectionProps {
-  articles: Article[];
+  articles: PublicArticle[];
 }
 
 export function TrendingSection({ articles }: TrendingSectionProps) {

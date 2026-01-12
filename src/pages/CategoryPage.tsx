@@ -2,12 +2,33 @@ import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
-import { categories, getArticlesByCategory, articles } from "@/lib/data";
+import { useCategories } from "@/hooks/useCategories";
+import { useArticlesByCategory } from "@/hooks/usePublicArticles";
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const category = categories.find((c) => c.slug === slug);
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: articles, isLoading: articlesLoading } = useArticlesByCategory(slug || '', 20);
+  
+  const category = categories?.find((c) => c.slug === slug);
+  const isLoading = categoriesLoading || articlesLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <Skeleton className="h-8 w-48 mb-8" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-[200px] rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!category) {
     return (
@@ -24,10 +45,6 @@ const CategoryPage = () => {
       </Layout>
     );
   }
-
-  const categoryArticles = getArticlesByCategory(slug || "");
-  // If no articles in this category, show all articles for demo purposes
-  const displayArticles = categoryArticles.length > 0 ? categoryArticles : articles;
 
   return (
     <Layout>
@@ -58,24 +75,23 @@ const CategoryPage = () => {
 
       {/* Articles Grid */}
       <section className="container pb-12">
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-          {displayArticles.map((article, index) => (
-            <div
-              key={article.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <ArticleCard article={article} />
-            </div>
-          ))}
-        </div>
-
-        {/* Load More */}
-        <div className="mt-12 text-center">
-          <Button variant="outline" size="lg">
-            Load More Articles
-          </Button>
-        </div>
+        {articles && articles.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+            {articles.map((article, index) => (
+              <div
+                key={article.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <ArticleCard article={article} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No articles in this category yet.</p>
+          </div>
+        )}
       </section>
     </Layout>
   );
