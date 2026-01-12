@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Upload, X, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -147,10 +147,19 @@ export const ImageUpload = ({
   const [error, setError] = useState<string | null>(null);
   const [compressionProgress, setCompressionProgress] = useState<string | null>(null);
   
+  // File input ref for programmatic click
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Cropping state
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('image');
+
+  const handleUploadClick = () => {
+    if (!isUploading && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   const validateFile = (file: File): string | null => {
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
@@ -323,26 +332,29 @@ export const ImageUpload = ({
     <>
       <div
         className={cn(
-          'relative rounded-lg border-2 border-dashed transition-colors',
-          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
+          'relative rounded-lg border-2 border-dashed transition-colors cursor-pointer',
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
           error ? 'border-destructive' : '',
+          isUploading ? 'cursor-wait' : '',
           aspectRatioClass,
           className
         )}
+        onClick={handleUploadClick}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
         <input
+          ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
           onChange={handleChange}
           disabled={isUploading}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          className="hidden"
         />
         
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 pointer-events-none">
           {isUploading ? (
             <>
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
