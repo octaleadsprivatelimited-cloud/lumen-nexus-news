@@ -3,7 +3,6 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { TrendingSection } from "@/components/home/TrendingSection";
 import { LatestArticles } from "@/components/home/LatestArticles";
 import { CategorySection } from "@/components/home/CategorySection";
-import { NewsletterCTA } from "@/components/home/NewsletterCTA";
 import { WebsiteSchema, OrganizationSchema } from "@/components/seo/StructuredData";
 import { Helmet } from "react-helmet-async";
 import { 
@@ -74,8 +73,6 @@ const Index = () => {
         <LatestArticles articles={latestArticles} />
       )}
 
-      {/* Newsletter CTA */}
-      <NewsletterCTA />
 
       {/* Category Sections */}
       {techCategory && techArticles && techArticles.length > 0 && (

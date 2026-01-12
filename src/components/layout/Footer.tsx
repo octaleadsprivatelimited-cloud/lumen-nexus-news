@@ -1,7 +1,5 @@
 import { Link } from "react-router-dom";
 import { Mail, Twitter, Facebook, Linkedin, Instagram, ChevronDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { categories } from "@/lib/data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -15,29 +13,6 @@ export function Footer() {
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
-      {/* Newsletter Section */}
-      <div className="border-b border-primary-foreground/10">
-        <div className="container py-12">
-          <div className="max-w-xl mx-auto text-center">
-            <h3 className="text-2xl font-display font-bold mb-2">
-              Stay Informed
-            </h3>
-            <p className="text-primary-foreground/70 mb-6">
-              Get the latest articles delivered to your inbox. No spam, unsubscribe anytime.
-            </p>
-            <div className="flex gap-2 max-w-md mx-auto">
-              <Input
-                placeholder="Enter your email"
-                type="email"
-                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
-              />
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                Subscribe
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Footer */}
       <div className="container py-12">
