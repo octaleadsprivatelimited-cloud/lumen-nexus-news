@@ -1,8 +1,8 @@
 import { ArticleCard } from "@/components/articles/ArticleCard";
-import type { Article } from "@/lib/data";
+import type { PublicArticle } from "@/hooks/usePublicArticles";
 
 interface HeroSectionProps {
-  featuredArticles: Article[];
+  featuredArticles: PublicArticle[];
 }
 
 export function HeroSection({ featuredArticles }: HeroSectionProps) {

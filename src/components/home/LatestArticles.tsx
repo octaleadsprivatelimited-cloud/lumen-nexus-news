@@ -1,9 +1,9 @@
 import { Clock } from "lucide-react";
 import { ArticleCard } from "@/components/articles/ArticleCard";
-import type { Article } from "@/lib/data";
+import type { PublicArticle } from "@/hooks/usePublicArticles";
 
 interface LatestArticlesProps {
-  articles: Article[];
+  articles: PublicArticle[];
 }
 
 export function LatestArticles({ articles }: LatestArticlesProps) {

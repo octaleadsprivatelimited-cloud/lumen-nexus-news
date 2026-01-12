@@ -6,22 +6,43 @@ import { CategorySection } from "@/components/home/CategorySection";
 import { NewsletterCTA } from "@/components/home/NewsletterCTA";
 import { WebsiteSchema, OrganizationSchema } from "@/components/seo/StructuredData";
 import { Helmet } from "react-helmet-async";
-import {
-  getFeaturedArticles,
-  getTrendingArticles,
-  getLatestArticles,
-  getArticlesByCategory,
-  categories,
-} from "@/lib/data";
+import { 
+  useFeaturedArticles, 
+  useTrendingArticles, 
+  useLatestArticles,
+  useArticlesByCategory 
+} from "@/hooks/usePublicArticles";
+import { useCategories } from "@/hooks/useCategories";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
-  const featuredArticles = getFeaturedArticles();
-  const trendingArticles = getTrendingArticles();
-  const latestArticles = getLatestArticles();
+  const { data: featuredArticles, isLoading: featuredLoading } = useFeaturedArticles();
+  const { data: trendingArticles, isLoading: trendingLoading } = useTrendingArticles();
+  const { data: latestArticles, isLoading: latestLoading } = useLatestArticles(9);
+  const { data: categories } = useCategories();
+  
+  const { data: techArticles } = useArticlesByCategory('technology', 6);
+  const { data: healthArticles } = useArticlesByCategory('health', 6);
 
-  // Get articles for a few categories to display
-  const techArticles = getArticlesByCategory("technology");
-  const healthArticles = getArticlesByCategory("health");
+  const techCategory = categories?.find((c) => c.slug === 'technology');
+  const healthCategory = categories?.find((c) => c.slug === 'health');
+
+  const isLoading = featuredLoading || trendingLoading || latestLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container py-8 space-y-8">
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-[200px] rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -39,26 +60,44 @@ const Index = () => {
       <OrganizationSchema />
       
       {/* Hero Section with Featured Articles */}
-      <HeroSection featuredArticles={featuredArticles} />
+      {featuredArticles && featuredArticles.length > 0 && (
+        <HeroSection featuredArticles={featuredArticles} />
+      )}
 
       {/* Trending Articles */}
-      <TrendingSection articles={trendingArticles} />
+      {trendingArticles && trendingArticles.length > 0 && (
+        <TrendingSection articles={trendingArticles} />
+      )}
 
       {/* Latest Articles */}
-      <LatestArticles articles={latestArticles} />
+      {latestArticles && latestArticles.length > 0 && (
+        <LatestArticles articles={latestArticles} />
+      )}
 
       {/* Newsletter CTA */}
       <NewsletterCTA />
 
       {/* Category Sections */}
-      <CategorySection
-        category={categories.find((c) => c.slug === "technology")!}
-        articles={techArticles}
-      />
-      <CategorySection
-        category={categories.find((c) => c.slug === "health")!}
-        articles={healthArticles}
-      />
+      {techCategory && techArticles && techArticles.length > 0 && (
+        <CategorySection
+          category={techCategory}
+          articles={techArticles}
+        />
+      )}
+      {healthCategory && healthArticles && healthArticles.length > 0 && (
+        <CategorySection
+          category={healthCategory}
+          articles={healthArticles}
+        />
+      )}
+
+      {/* Show message when no articles */}
+      {(!latestArticles || latestArticles.length === 0) && !isLoading && (
+        <div className="container py-16 text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-4">No Articles Yet</h2>
+          <p className="text-muted-foreground">Check back soon for new content!</p>
+        </div>
+      )}
     </Layout>
   );
 };
