@@ -226,3 +226,24 @@ export const formatRelativeDate = (dateString: string) => {
   if (diffInHours < 48) return "Yesterday";
   return formatDate(dateString);
 };
+
+/**
+ * Calculate estimated reading time based on content length
+ * @param content - The text content to analyze
+ * @param wordsPerMinute - Average reading speed (default: 200 wpm)
+ * @returns Estimated reading time in minutes (minimum 1)
+ */
+export const calculateReadingTime = (content: string, wordsPerMinute = 200): number => {
+  if (!content) return 1;
+  
+  // Remove HTML tags if present
+  const plainText = content.replace(/<[^>]*>/g, '');
+  
+  // Count words by splitting on whitespace
+  const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+  
+  // Calculate reading time, minimum 1 minute
+  const readingTime = Math.ceil(wordCount / wordsPerMinute);
+  
+  return Math.max(1, readingTime);
+};
