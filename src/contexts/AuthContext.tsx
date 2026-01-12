@@ -35,7 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<AppRole | null>(null);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string): Promise<AppRole | null> => {
+    // First try direct table read (works when the current user is allowed to SELECT user_roles)
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -43,13 +44,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching role:', error);
-        return null;
-      }
-      return data?.role || null;
+      if (!error && data?.role) return data.role;
+      if (error) console.warn('Role table read failed; falling back to RPC checks:', error);
     } catch (err) {
-      console.error('Error fetching role:', err);
+      console.warn('Role table read threw; falling back to RPC checks:', err);
+    }
+
+    // Fallback: role checks via security-definer functions (works even if user_roles is not readable)
+    try {
+      const rolePriority: AppRole[] = ['super_admin', 'editor', 'author'];
+
+      for (const role of rolePriority) {
+        const { data: has, error } = await supabase.rpc('has_role', {
+          _user_id: userId,
+          _role: role,
+        });
+
+        if (!error && has) return role;
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error checking roles via RPC:', err);
       return null;
     }
   };
