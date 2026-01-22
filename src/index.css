@@ -43,14 +43,10 @@
 
     /* Category Colors */
     --category-health: 142 76% 36%;
+    --category-food: 24 95% 53%;
     --category-technology: 217 91% 60%;
-    --category-business: 262 83% 58%;
-    --category-education: 24 95% 53%;
+    --category-facts: 199 89% 48%;
     --category-finance: 158 64% 52%;
-    --category-lifestyle: 330 81% 60%;
-    --category-science: 199 89% 48%;
-    --category-travel: 43 96% 56%;
-    --category-trending: 0 84% 60%;
 
     /* Typography */
     --font-display: 'Playfair Display', Georgia, serif;
@@ -307,5 +303,13 @@
 
   .ProseMirror a:hover {
     color: hsl(var(--accent));
+  }
+}
+
+/* Footer menu items - always visible on desktop */
+@media (min-width: 768px) {
+  footer [data-radix-collapsible-content] {
+    display: block !important;
+    visibility: visible !important;
   }
 }

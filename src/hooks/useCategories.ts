@@ -13,9 +13,18 @@ export const useCategories = () => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
+        .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      
+      if (import.meta.env.DEV) {
+        console.log('Categories loaded:', data?.length || 0);
+      }
+      
       return data;
     },
   });

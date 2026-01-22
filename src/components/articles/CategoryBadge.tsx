@@ -10,14 +10,10 @@ interface CategoryBadgeProps {
 
 const categoryColors: Record<string, string> = {
   health: "bg-category-health/10 text-category-health border-category-health/20",
+  food: "bg-category-food/10 text-category-food border-category-food/20",
   technology: "bg-category-technology/10 text-category-technology border-category-technology/20",
-  business: "bg-category-business/10 text-category-business border-category-business/20",
-  education: "bg-category-education/10 text-category-education border-category-education/20",
+  facts: "bg-category-facts/10 text-category-facts border-category-facts/20",
   finance: "bg-category-finance/10 text-category-finance border-category-finance/20",
-  lifestyle: "bg-category-lifestyle/10 text-category-lifestyle border-category-lifestyle/20",
-  science: "bg-category-science/10 text-category-science border-category-science/20",
-  travel: "bg-category-travel/10 text-category-travel border-category-travel/20",
-  trending: "bg-category-trending/10 text-category-trending border-category-trending/20",
 };
 
 export function CategoryBadge({ category, size = "sm", className }: CategoryBadgeProps) {

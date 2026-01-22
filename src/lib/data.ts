@@ -33,14 +33,10 @@ export interface Article {
 
 export const categories: Category[] = [
   { id: "1", name: "Health", slug: "health", color: "health" },
-  { id: "2", name: "Technology", slug: "technology", color: "technology" },
-  { id: "3", name: "Business", slug: "business", color: "business" },
-  { id: "4", name: "Education", slug: "education", color: "education" },
+  { id: "2", name: "Food", slug: "food", color: "food" },
+  { id: "3", name: "Technology", slug: "technology", color: "technology" },
+  { id: "4", name: "Facts", slug: "facts", color: "facts" },
   { id: "5", name: "Finance", slug: "finance", color: "finance" },
-  { id: "6", name: "Lifestyle", slug: "lifestyle", color: "lifestyle" },
-  { id: "7", name: "Science", slug: "science", color: "science" },
-  { id: "8", name: "Travel", slug: "travel", color: "travel" },
-  { id: "9", name: "Trending News", slug: "trending", color: "trending" },
 ];
 
 export const authors: Author[] = [
