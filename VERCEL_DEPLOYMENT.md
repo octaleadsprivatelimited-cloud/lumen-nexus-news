@@ -7,6 +7,7 @@ Make sure to set these environment variables in your Vercel project settings:
 ### Required Variables:
 - `VITE_SUPABASE_URL` - Your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key
+- `CRON_SECRET` - Secret key for authorizing cron job requests (set a strong random string)
 
 ### Optional (for serverless functions):
 - `SUPABASE_URL` - Alternative name for Supabase URL

@@ -4,7 +4,20 @@
  * It calls the Supabase keep-alive edge function to prevent database from sleeping
  */
 
-export async function GET() {
+export async function GET(req) {
+  // Verify authorization header with CRON_SECRET
+  const authHeader = req.headers.get('Authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  
+  if (!cronSecret) {
+    console.error('CRON_SECRET environment variable is not set');
+    return Response.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+  
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     // Get Supabase URL from environment variable
     // Vercel serverless functions can access both VITE_ and regular env vars
