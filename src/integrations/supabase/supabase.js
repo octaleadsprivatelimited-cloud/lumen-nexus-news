@@ -48,6 +48,9 @@ export const supabase = createClient(url, key, {
   }
 })
 
+// Export URL for use in other components
+export const getSupabaseUrl = () => url
+
 /**
  * Image Storage Helper Functions
  * 

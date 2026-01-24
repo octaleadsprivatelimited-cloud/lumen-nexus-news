@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Save, Globe, Mail, Bell, Shield, Palette, Clock, Copy, ExternalLink, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useLastPing, useManualPing } from '@/hooks/usePingStatus';
+import { getSupabaseUrl } from '@/integrations/supabase/supabase.js';
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -52,7 +53,8 @@ const SettingsPage = () => {
     toast({ title: `${section} settings saved successfully` });
   };
 
-  const KEEP_ALIVE_URL = 'https://ycsvgcvrknipvvrbjond.supabase.co/functions/v1/keep-alive';
+  // Get keep-alive URL dynamically from Supabase URL
+  const KEEP_ALIVE_URL = `${getSupabaseUrl()}/functions/v1/keep-alive`;
 
   const KeepAliveSettings = () => {
     const { data: lastPing } = useLastPing();

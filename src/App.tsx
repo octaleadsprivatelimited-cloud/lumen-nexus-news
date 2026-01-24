@@ -24,6 +24,7 @@ import UsersPage from "./pages/admin/UsersPage";
 import AdsPage from "./pages/admin/AdsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import MediaPage from "./pages/admin/MediaPage";
+import AutoKeepAlive from "./components/admin/AutoKeepAlive";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AutoKeepAlive />
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
