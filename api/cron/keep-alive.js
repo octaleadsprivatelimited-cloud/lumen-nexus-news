@@ -4,12 +4,7 @@
  * It calls the Supabase keep-alive edge function to prevent database from sleeping
  */
 
-export default async function handler(req, res) {
-  // Only allow GET requests (Vercel Cron sends GET)
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function GET() {
   try {
     // Get Supabase URL from environment variable
     // Vercel serverless functions can access both VITE_ and regular env vars
@@ -32,26 +27,26 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Keep-alive failed:', response.status, errorData);
-      return res.status(response.status).json({ 
+      return Response.json({ 
         success: false, 
         error: errorData || 'Keep-alive request failed' 
-      });
+      }, { status: response.status });
     }
 
     const data = await response.json();
     console.log('Keep-alive successful:', data);
     
-    return res.status(200).json({ 
+    return Response.json({ 
       success: true, 
       message: 'Keep-alive ping sent successfully',
       data 
-    });
+    }, { status: 200 });
   } catch (error) {
     console.error('Error calling keep-alive:', error);
-    return res.status(500).json({ 
+    return Response.json({ 
       success: false, 
       error: error.message || 'Internal server error' 
-    });
+    }, { status: 500 });
   }
 }
 
