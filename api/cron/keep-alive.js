@@ -12,11 +12,12 @@ export default async function handler(req, res) {
 
   try {
     // Get Supabase URL from environment variable
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://pdcwabsevcfbdltqlcpb.supabase.co';
+    // Vercel serverless functions can access both VITE_ and regular env vars
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://pdcwabsevcfbdltqlcpb.supabase.co';
     const keepAliveUrl = `${supabaseUrl}/functions/v1/keep-alive`;
     
     // Get anon key for authentication
-    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_OxpGS3BVemmfeRVroxQcfg_855CrXbS';
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_OxpGS3BVemmfeRVroxQcfg_855CrXbS';
     
     // Call the Supabase keep-alive edge function
     const response = await fetch(keepAliveUrl, {
@@ -28,17 +29,18 @@ export default async function handler(req, res) {
       },
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      console.error('Keep-alive failed:', data);
+      const errorData = await response.text();
+      console.error('Keep-alive failed:', response.status, errorData);
       return res.status(response.status).json({ 
         success: false, 
-        error: data.error || 'Keep-alive request failed' 
+        error: errorData || 'Keep-alive request failed' 
       });
     }
 
+    const data = await response.json();
     console.log('Keep-alive successful:', data);
+    
     return res.status(200).json({ 
       success: true, 
       message: 'Keep-alive ping sent successfully',
