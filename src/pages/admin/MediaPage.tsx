@@ -23,6 +23,7 @@ interface MediaItem {
   id: string;
   name: string;
   url: string;
+  path: string; // Full path including folder
   type: 'image' | 'document' | 'video';
   size: string;
   uploadedAt: string;
@@ -39,38 +40,59 @@ const MediaPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState('');
 
-  // Fetch media from storage
+  // Fetch media from storage - from all folders
   const fetchMedia = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.storage
-        .from('images')
-        .list('uploads', {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: 'created_at', order: 'desc' },
-        });
+      const folders = ['uploads', 'articles'];
+      const allItems: MediaItem[] = [];
 
-      if (error) throw error;
+      // Fetch from each folder
+      for (const folder of folders) {
+        const { data, error } = await supabase.storage
+          .from('media')
+          .list(folder, {
+            limit: 100,
+            offset: 0,
+            sortBy: { column: 'created_at', order: 'desc' },
+          });
 
-      const items: MediaItem[] = (data || [])
-        .filter(file => file.name !== '.emptyFolderPlaceholder')
-        .map(file => {
-          const { data: urlData } = supabase.storage
-            .from('images')
-            .getPublicUrl(`uploads/${file.name}`);
-          
-          return {
-            id: file.id,
-            name: file.name,
-            url: urlData.publicUrl,
-            type: 'image' as const,
-            size: formatFileSize(file.metadata?.size || 0),
-            uploadedAt: file.created_at || new Date().toISOString(),
-          };
-        });
+        if (error) {
+          // If folder doesn't exist, continue to next folder
+          if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
+            continue;
+          }
+          throw error;
+        }
 
-      setMediaItems(items);
+        const items: MediaItem[] = (data || [])
+          .filter(file => file.name !== '.emptyFolderPlaceholder' && !file.name.endsWith('/'))
+          .map(file => {
+            const filePath = `${folder}/${file.name}`;
+            const { data: urlData } = supabase.storage
+              .from('media')
+              .getPublicUrl(filePath);
+            
+            return {
+              id: file.id || `${folder}-${file.name}`,
+              name: file.name,
+              url: urlData.publicUrl,
+              path: filePath,
+              type: 'image' as const,
+              size: formatFileSize(file.metadata?.size || 0),
+              uploadedAt: file.created_at || new Date().toISOString(),
+            };
+          });
+
+        allItems.push(...items);
+      }
+
+      // Sort by upload date (newest first)
+      allItems.sort((a, b) => 
+        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      );
+
+      setMediaItems(allItems);
     } catch (error) {
       console.error('Error fetching media:', error);
       toast.error('Failed to load media');
@@ -107,10 +129,9 @@ const MediaPage = () => {
     
     setIsDeleting(true);
     try {
-      const filePath = `uploads/${selectedMedia.name}`;
       const { error } = await supabase.storage
-        .from('images')
-        .remove([filePath]);
+        .from('media')
+        .remove([selectedMedia.path]);
 
       if (error) throw error;
 
@@ -237,6 +258,7 @@ const MediaPage = () => {
                 <CardContent className="p-3">
                   <p className="text-sm font-medium truncate">{item.name}</p>
                   <p className="text-xs text-muted-foreground">{item.size}</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">{item.path.split('/')[0]}</p>
                 </CardContent>
               </Card>
             ))}
@@ -259,7 +281,7 @@ const MediaPage = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{item.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.size} • {format(new Date(item.uploadedAt), 'MMM d, yyyy')}
+                    {item.size} • {format(new Date(item.uploadedAt), 'MMM d, yyyy')} • {item.path.split('/')[0]}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -307,8 +329,8 @@ const MediaPage = () => {
                   <p className="font-medium">{selectedMedia.size}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{selectedMedia.type}</p>
+                  <p className="text-muted-foreground">Folder</p>
+                  <p className="font-medium capitalize">{selectedMedia.path.split('/')[0]}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Uploaded</p>

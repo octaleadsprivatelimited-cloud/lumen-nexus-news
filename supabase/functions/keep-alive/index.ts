@@ -1,4 +1,13 @@
+// @ts-ignore - Deno edge function, types are provided by Supabase runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Deno global types (provided by Supabase edge runtime)
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+  serve: (handler: (req: Request) => Promise<Response> | Response) => void;
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

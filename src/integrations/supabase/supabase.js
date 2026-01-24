@@ -48,6 +48,66 @@ export const supabase = createClient(url, key, {
   }
 })
 
+/**
+ * Image Storage Helper Functions
+ * 
+ * The images are stored in Supabase Storage bucket named "media"
+ * Images are organized in folders: "uploads" and "articles"
+ * 
+ * Upload images using the ImageUpload component or process-image edge function
+ * Access images via: supabase.storage.from('media').getPublicUrl(path)
+ */
+
+/**
+ * Get public URL for an image
+ * @param {string} path - Image path (e.g., "uploads/image-name.webp" or "articles/image-name.webp")
+ * @returns {string} Public URL of the image
+ */
+export const getImageUrl = (path) => {
+  const { data } = supabase.storage.from('media').getPublicUrl(path)
+  return data.publicUrl
+}
+
+/**
+ * List images from a specific folder
+ * @param {string} folder - Folder name ('uploads' or 'articles')
+ * @param {number} limit - Maximum number of images to return
+ * @returns {Promise<Array>} Array of image file objects
+ */
+export const listImages = async (folder = 'uploads', limit = 100) => {
+  const { data, error } = await supabase.storage
+    .from('media')
+    .list(folder, { limit, sortBy: { column: 'created_at', order: 'desc' } })
+  
+  if (error) {
+    console.error('Error listing images:', error)
+    return []
+  }
+  
+  return (data || []).filter(file => 
+    file.name !== '.emptyFolderPlaceholder' && 
+    !file.name.endsWith('/')
+  )
+}
+
+/**
+ * Delete an image from storage
+ * @param {string} path - Full path to the image (e.g., "uploads/image-name.webp")
+ * @returns {Promise<boolean>} True if successful, false otherwise
+ */
+export const deleteImage = async (path) => {
+  const { error } = await supabase.storage
+    .from('media')
+    .remove([path])
+  
+  if (error) {
+    console.error('Error deleting image:', error)
+    return false
+  }
+  
+  return true
+}
+
 // Log success in development
 if (import.meta.env.DEV) {
   console.log('✅ Supabase client initialized successfully')
@@ -97,6 +157,54 @@ if (import.meta.env.DEV) {
     })
     .catch((err) => {
       console.error('❌ Categories connection error:', err)
+    })
+  
+  // Test connection to media storage bucket
+  supabase.storage
+    .from('media')
+    .list('uploads', { limit: 1 })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('❌ Supabase media storage bucket test failed:', error.message)
+        console.error('💡 Solutions:')
+        console.error('   1. Make sure the "media" storage bucket exists in Supabase')
+        console.error('   2. Check Storage > Settings in your Supabase dashboard')
+        console.error('   3. Run the SQL from: supabase/migrations/*.sql (creates the bucket)')
+        console.error('   4. Verify RLS policies allow access - see supabase/rls-policies.sql')
+        
+        if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
+          console.error('')
+          console.error('📦 Storage Bucket Missing!')
+          console.error('   Go to Supabase Dashboard > Storage')
+          console.error('   Create a bucket named "media" and make it public')
+          console.error('   Or run the migration SQL that creates it')
+        }
+      } else {
+        console.log('✅ Supabase media storage bucket test successful')
+        console.log('📊 Found', data?.length || 0, 'image(s) in uploads folder')
+      }
+    })
+    .catch((err) => {
+      console.error('❌ Media storage connection error:', err)
+    })
+  
+  // Test connection to media storage bucket (articles folder)
+  supabase.storage
+    .from('media')
+    .list('articles', { limit: 1 })
+    .then(({ data, error }) => {
+      if (error) {
+        // It's okay if articles folder doesn't exist yet
+        if (!error.message?.includes('not found') && !error.message?.includes('does not exist')) {
+          console.warn('⚠️ Supabase media storage (articles folder) test:', error.message)
+        }
+      } else {
+        console.log('✅ Supabase media storage (articles folder) accessible')
+        console.log('📊 Found', data?.length || 0, 'image(s) in articles folder')
+      }
+    })
+    .catch((err) => {
+      // Silently ignore - articles folder may not exist yet
     })
 }
 

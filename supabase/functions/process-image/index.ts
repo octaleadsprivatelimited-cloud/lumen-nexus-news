@@ -81,7 +81,7 @@ Deno.serve(async (req: Request) => {
 
     // ✅ Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
-      .from('images')
+      .from('media')
       .upload(filename, buffer, {
         contentType: 'image/webp',
         upsert: false,
@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
 
     // ✅ Get public URL (bucket must be PUBLIC)
     const { data } = supabase.storage
-      .from('images')
+      .from('media')
       .getPublicUrl(filename);
 
     // ✅ SUCCESS RESPONSE (2xx REQUIRED BY TIPTAP)
