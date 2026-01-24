@@ -377,7 +377,7 @@ const MediaPage = () => {
           <DialogHeader>
             <DialogTitle>Upload Image</DialogTitle>
             <DialogDescription>
-              Upload images (PNG, JPG, WEBP). Files will be optimized automatically.
+              Upload images directly to Supabase Storage. All formats are supported.
             </DialogDescription>
           </DialogHeader>
           
@@ -389,7 +389,7 @@ const MediaPage = () => {
           />
           
           <p className="text-xs text-muted-foreground text-center">
-            Max size: 300KB after compression • WebP format recommended
+            Images are handled directly by Supabase Storage
           </p>
 
           <DialogFooter>
