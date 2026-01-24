@@ -34,3 +34,14 @@ CREATE POLICY "Admins can delete media"
 ON storage.objects FOR DELETE
 USING (bucket_id = 'media' AND is_admin(auth.uid()));
 
+-- Note: CORS headers are handled by the edge function (process-image)
+-- The edge function includes:
+-- - Access-Control-Allow-Origin: *
+-- - Access-Control-Allow-Methods: GET, POST, OPTIONS
+-- - Access-Control-Allow-Headers: authorization, x-client-info, apikey, content-type
+-- - Access-Control-Max-Age: 86400
+--
+-- Storage upload options include:
+-- - contentType: 'image/webp'
+-- - cacheControl: '3600' (1 hour cache)
+
